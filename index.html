@@ -378,14 +378,19 @@ function draw() {
   // 背景画像
   ctx.drawImage(bg, 0, 0, canvas.width, canvas.height);
 
-  // ★ S10 円2.png を中央に重ねる
-  if (overlay.complete) {
-    const imgW = overlay.width;
-    const imgH = overlay.height;
-    const cx = (canvas.width - imgW) / 2;
-    const cy = (canvas.height - imgH) / 2;
-    ctx.drawImage(overlay, cx, cy);
-  }
+// ★ S10 円2.png を中央に 10% サイズで重ねる
+if (overlay.complete) {
+  const scale = 0.1; // 10%
+
+  const imgW = overlay.width * scale;
+  const imgH = overlay.height * scale;
+
+  const cx = (canvas.width - imgW) / 2;
+  const cy = (canvas.height - imgH) / 2;
+
+  ctx.drawImage(overlay, cx, cy, imgW, imgH);
+}
+
 
   // 赤点
   for (let i = 0; i < redPoints.length; i++) {
@@ -604,6 +609,7 @@ bg.onload = () => {
 
 </body>
 </html>
+
 
 
 
