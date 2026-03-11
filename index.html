@@ -77,10 +77,8 @@
 
 <br>
 
-<!-- ★ 機能1・2の切り替えはボタンのまま -->
 <button id="modeToggle">① SP用</button>
 
-<!-- ★ サブ機能はプルダウン -->
 <select id="subSelect" style="margin-left:10px;">
   <option value="sp_attack">攻撃SP</option>
   <option value="sp_buff">バフSP</option>
@@ -136,8 +134,13 @@
 const canvas = document.getElementById("board");
 const ctx = canvas.getContext("2d");
 
+// 背景画像
 const bg = new Image();
 bg.src = "background.png";
+
+// 重ねる画像（中央に配置）
+const overlay = new Image();
+overlay.src = "S10 円2.png";
 
 let mode = "red";
 let showLines = true;
@@ -150,10 +153,7 @@ let dragTarget = null;
 
 let selectedPoint = null;
 
-// ★ 機能1・2
 let modeCategory = 1; // 1=SP用, 2=ST用
-
-// ★ サブ機能
 let spMode = "sp_attack";
 let stMode = "st_buffer";
 
@@ -310,7 +310,8 @@ function updateCounter() {
   redCount.className = redPoints.length === 4 ? "max" : "";
   blueCount.className = bluePoints.length === 4 ? "max" : "";
 }
-// ===== 座標パネル更新（内部 → 中央原点） =====
+
+// ===== 座標パネル更新 =====
 function updateCoordPanel() {
   const panel = document.getElementById("coordList");
   panel.innerHTML = "";
@@ -341,7 +342,7 @@ function updateCoordPanel() {
   for (let i = 1; i <= 4; i++) addRow("blue", i, bluePoints[i-1]);
 }
 
-// ===== 座標反映（中央原点 → 内部） =====
+// ===== 座標反映 =====
 document.getElementById("applyCoords").onclick = () => {
   const cx = canvas.width / 2;
   const cy = canvas.height / 2;
@@ -373,7 +374,18 @@ document.getElementById("applyCoords").onclick = () => {
 // ===== 描画 =====
 function draw() {
   ctx.clearRect(0,0,canvas.width,canvas.height);
+
+  // 背景画像
   ctx.drawImage(bg, 0, 0, canvas.width, canvas.height);
+
+  // ★ S10 円2.png を中央に重ねる
+  if (overlay.complete) {
+    const imgW = overlay.width;
+    const imgH = overlay.height;
+    const cx = (canvas.width - imgW) / 2;
+    const cy = (canvas.height - imgH) / 2;
+    ctx.drawImage(overlay, cx, cy);
+  }
 
   // 赤点
   for (let i = 0; i < redPoints.length; i++) {
@@ -407,10 +419,9 @@ function draw() {
   if (cRed) drawCross(cRed.x, cRed.y, 10, "pink");
   if (cBlue) drawCross(cBlue.x, cBlue.y, 10, "lightblue");
 
-  // ===== 機能1（SP用） =====
+  // ===== SP用 =====
   if (modeCategory === 1) {
 
-    // 攻撃SP：重心 → 異色の最短点
     if (spMode === "sp_attack") {
       if (cRed) {
         const t = nearest(cRed, bluePoints);
@@ -440,7 +451,6 @@ function draw() {
       }
     }
 
-    // バフSP：重心 → 同色の最短点
     if (spMode === "sp_buff") {
       if (cRed) {
         const t = nearest(cRed, redPoints);
@@ -453,32 +463,30 @@ function draw() {
     }
   }
 
-  // ===== 機能2（ST用） =====
+  // ===== ST用 =====
   if (modeCategory === 2 && selectedPoint) {
     const p = selectedPoint;
     const sameList = p.color === "red" ? redPoints : bluePoints;
     const enemyList = p.color === "red" ? bluePoints : redPoints;
 
-    // バッファー：同色の最寄り点を円で囲む
     if (stMode === "st_buffer") {
       const t = nearest(p, sameList, true);
       if (t) drawCircle(t.x, t.y, "rgba(255,255,0,0.6)");
     }
 
-    // アタッカー：異色の最寄り点を強調（直線なし）
-　　if (stMode === "st_attacker") {
-  　　const t = nearest(p, enemyList);
-  　　if (t) {
-    　　drawCircle(
-      t.x,
-      t.y,
-      p.color === "red"
-        ? "rgba(255,0,0,0.6)"
-        : "rgba(0,0,255,0.6)"
-    );
-  }
-}
-    // ハナコ（水着）：異色の最寄り点方向に扇形
+    if (stMode === "st_attacker") {
+      const t = nearest(p, enemyList);
+      if (t) {
+        drawCircle(
+          t.x,
+          t.y,
+          p.color === "red"
+            ? "rgba(255,0,0,0.6)"
+            : "rgba(0,0,255,0.6)"
+        );
+      }
+    }
+
     if (stMode === "st_hanako") {
       const t = nearest(p, enemyList);
       if (t) {
@@ -523,6 +531,7 @@ function drawCircle(x, y, color) {
   ctx.arc(x, y, 16, 0, Math.PI*2);
   ctx.stroke();
 }
+
 
 // ===== UIイベント =====
 
@@ -595,6 +604,7 @@ bg.onload = () => {
 
 </body>
 </html>
+
 
 
 
