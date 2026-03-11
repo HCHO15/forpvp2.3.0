@@ -378,9 +378,9 @@ function draw() {
   // 背景画像
   ctx.drawImage(bg, 0, 0, canvas.width, canvas.height);
 
-// ★ S10 円2.png を中央に 10% サイズで重ねる
+// ★ S10 円2.png を中央に 10% サイズ & 不透明度 30% で重ねる
 if (overlay.complete) {
-  const scale = 0.2; // 20%
+  const scale = 0.1; // 10%
 
   const imgW = overlay.width * scale;
   const imgH = overlay.height * scale;
@@ -388,7 +388,10 @@ if (overlay.complete) {
   const cx = (canvas.width - imgW) / 2;
   const cy = (canvas.height - imgH) / 2;
 
+  ctx.save();          // ← 元の状態を保存
+  ctx.globalAlpha = 0.3; // ← 不透明度 30%
   ctx.drawImage(overlay, cx, cy, imgW, imgH);
+  ctx.restore();       // ← 不透明度を元に戻す
 }
 
 
@@ -609,6 +612,7 @@ bg.onload = () => {
 
 </body>
 </html>
+
 
 
 
