@@ -140,9 +140,12 @@ const ctx = canvas.getContext("2d");
 const bg = new Image();
 bg.src = "background.png";
 
-// 重ねる画像（中央に配置）
-const overlay = new Image();
-overlay.src = "S10 円2.png";
+// ★ 新しい2枚のマップ画像（中央に重ねる）
+const mapBase = new Image();
+mapBase.src = "S10 map.png";
+
+const mapMask = new Image();
+mapMask.src = "S10 map 遮蔽.png";
 
 let mode = "red";
 let showLines = true;
@@ -155,7 +158,7 @@ let dragTarget = null;
 
 let selectedPoint = null;
 
-let modeCategory = 1; // 1=SP用, 2=ST用
+let modeCategory = 1;
 let spMode = "sp_attack";
 let stMode = "st_buffer";
 
@@ -380,22 +383,15 @@ function draw() {
   // 背景画像
   ctx.drawImage(bg, 0, 0, canvas.width, canvas.height);
 
-// ★ S10 円2.png を中央に 10% サイズ & 不透明度 30% で重ねる
-if (overlay.complete) {
-  const scale = 0.2; // 20%
+  // ★ 新しい2枚のマップ画像を中央に重ねる
+  const mapW = canvas.width * 0.9;
+  const mapH = mapW * 0.5;
 
-  const imgW = overlay.width * scale;
-  const imgH = overlay.height * scale;
+  const mx = (canvas.width - mapW) / 2;
+  const my = (canvas.height - mapH) / 2;
 
-  const cx = (canvas.width - imgW) / 2;
-  const cy = (canvas.height - imgH) / 2;
-
-  ctx.save();          // ← 元の状態を保存
-  ctx.globalAlpha = 0.3; // ← 不透明度 30%
-  ctx.drawImage(overlay, cx, cy, imgW, imgH);
-  ctx.restore();       // ← 不透明度を元に戻す
-}
-
+  if (mapBase.complete) ctx.drawImage(mapBase, mx, my, mapW, mapH);
+  if (mapMask.complete) ctx.drawImage(mapMask, mx, my, mapW, mapH);
 
   // 赤点
   for (let i = 0; i < redPoints.length; i++) {
@@ -542,10 +538,7 @@ function drawCircle(x, y, color) {
   ctx.stroke();
 }
 
-
 // ===== UIイベント =====
-
-// 機能1・2切り替えボタン
 document.getElementById("modeToggle").onclick = () => {
   modeCategory = (modeCategory === 1) ? 2 : 1;
 
@@ -574,8 +567,8 @@ document.getElementById("modeToggle").onclick = () => {
 document.getElementById("subSelect").onchange = (e) => {
   const v = e.target.value;
   if (v === "sp_attack" || v === "sp_buff") spMode = v;
-　if (v === "st_buffer" || v === "st_hanako" || v === "st_attacker")
-  stMode = v;
+  if (v === "st_buffer" || v === "st_hanako" || v === "st_attacker")
+    stMode = v;
   draw();
 };
 
@@ -614,21 +607,3 @@ bg.onload = () => {
 
 </body>
 </html>
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
