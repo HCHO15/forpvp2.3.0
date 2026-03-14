@@ -390,8 +390,16 @@ function draw() {
   const mx = (canvas.width - mapW) / 2;
   const my = (canvas.height - mapH) / 2;
 
-  if (mapBase.complete) ctx.drawImage(mapBase, mx, my, mapW, mapH);
-  if (mapMask.complete) ctx.drawImage(mapMask, mx, my, mapW, mapH);
+// 下のマップ
+　if (mapBase.complete) ctx.drawImage(mapBase, mx, my, mapW, mapH);
+
+// 上の遮蔽マップ（半透明 50%）
+　if (mapMask.complete) {
+ 　 ctx.save();
+  　ctx.globalAlpha = 0.5;   // ← 不透明度 50%
+  　ctx.drawImage(mapMask, mx, my, mapW, mapH);
+  　ctx.restore();
+　}
 
   // 赤点
   for (let i = 0; i < redPoints.length; i++) {
