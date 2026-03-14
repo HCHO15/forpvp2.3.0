@@ -166,9 +166,13 @@ let lastTapTime = 0;
 let longPressTimer = null;
 
 function resizeCanvas() {
-  const w = Math.min(window.innerWidth * 0.9, 800);
-  canvas.width = w;
-  canvas.height = w / 2;
+// 元画像のアスペクト比（2400 / 3567）
+　const aspect = 2400 / 3567;
+
+// 横幅はキャンバスの90%
+　const mapW = canvas.width * 0.9;
+　const mapH = mapW * aspect;   // ← ここが重要（縦横比を維持）
+
   draw();
   updateCoordPanel();
 }
