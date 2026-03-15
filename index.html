@@ -91,8 +91,7 @@
 
 <div class="mainArea">
   <div style="flex-shrink:0;">
-    <!-- ★ キャンバスに明示的なサイズを設定 -->
-    <canvas id="board" width="900" height="1400"></canvas>
+    <canvas id="board"></canvas>
   </div>
 
   <div id="coordPanel">
@@ -106,6 +105,31 @@
   <h3>ツールの使い方</h3>
   <p>このツールは、戦術対抗戦の部隊配置を視覚的に確認するためのものです。</p>
   <p>肝心のマップが歪んでいるため現在調整中です。</p>
+
+  <p><strong>● 点の操作</strong></p>
+  <ul>
+    <li>左クリック / タップ：点を追加</li>
+    <li>右クリック / 長押し：点を削除</li>
+    <li>ドラッグ / スワイプ：点を移動</li>
+    <li>ダブルクリック / ダブルタップ(ST用使用時のみ)：基準点を選択</li>
+  </ul>
+
+  <p><strong>● 機能構成</strong></p>
+  <ul>
+    <li>① SP用
+      <ul>
+        <li>攻撃SP：部隊の重心 → 異色の最短点を円で示す</li>
+        <li>バフSP：部隊の重心 → 同色の最短点を円で示す</li>
+      </ul>
+    </li>
+    <li>② ST用
+      <ul>
+        <li>バッファー：基準点 → 同色の最短点を円で示す</li>
+        <li>アタッカー：基準点 → 異色の最短点を円で示す</li>
+        <li>ハナコ（水着）：基準点 → 異色の最短点方向に扇形</li>
+      </ul>
+    </li>
+  </ul>
 </div>
 
 <script>
@@ -116,7 +140,7 @@ const ctx = canvas.getContext("2d");
 const bg = new Image();
 bg.src = "background.png";
 
-// マップ画像
+// ★ 新しい2枚のマップ画像（中央に重ねる）
 const mapBase = new Image();
 mapBase.src = "S10 map.png";
 
@@ -141,18 +165,18 @@ let stMode = "st_buffer";
 let lastTapTime = 0;
 let longPressTimer = null;
 
-// ★ 正しいリサイズ処理
+// ★★★ 修正済み：キャンバスの内部バッファを CSS サイズに合わせる
 function resizeCanvas() {
-  const parentWidth = canvas.parentElement.clientWidth;
-  canvas.width = parentWidth;
-  canvas.height = parentWidth * 1.5;
+  const rect = canvas.getBoundingClientRect();
+  canvas.width = rect.width;
+  canvas.height = rect.height;
 
   draw();
   updateCoordPanel();
 }
+
 window.addEventListener("resize", resizeCanvas);
 resizeCanvas();
-
 // ===== マウス・タッチ操作 =====
 canvas.addEventListener("mousedown", (e) => {
   const {x, y} = getPos(e);
@@ -184,6 +208,40 @@ canvas.addEventListener("contextmenu", (e) => {
   e.preventDefault();
   const {x, y} = getPos(e);
   deletePoint(x, y);
+});
+
+canvas.addEventListener("touchstart", (e) => {
+  const {x, y} = getPos(e.touches[0]);
+  const now = Date.now();
+  if (now - lastTapTime < 300) {
+    setSelectedPoint(x, y);
+    lastTapTime = 0;
+    return;
+  }
+  lastTapTime = now;
+
+  dragTarget = findPoint(x, y);
+  if (dragTarget) dragging = true;
+  else longPressTimer = setTimeout(() => deletePoint(x, y), 500);
+});
+
+canvas.addEventListener("touchmove", (e) => {
+  if (!dragging || !dragTarget) return;
+  const {x, y} = getPos(e.touches[0]);
+  dragTarget.x = x;
+  dragTarget.y = y;
+  draw();
+  updateCoordPanel();
+});
+
+canvas.addEventListener("touchend", (e) => {
+  clearTimeout(longPressTimer);
+  if (!dragging) {
+    const {x, y} = getPos(e.changedTouches[0]);
+    addPoint(x, y);
+  }
+  dragging = false;
+  dragTarget = null;
 });
 
 // ===== 共通関数 =====
@@ -319,7 +377,6 @@ document.getElementById("applyCoords").onclick = () => {
   draw();
   updateCoordPanel();
 };
-
 // ===== 描画 =====
 function draw() {
   ctx.clearRect(0,0,canvas.width,canvas.height);
@@ -327,14 +384,17 @@ function draw() {
   // 背景画像
   ctx.drawImage(bg, 0, 0, canvas.width, canvas.height);
 
-  // マップ画像（中央に重ねる）
+  // ★ 新しい2枚のマップ画像を中央に重ねる
   const mapW = canvas.width * 0.9;
-  const mapH = mapW * (2400 / 3567); // 正しいアスペクト比
+  const mapH = mapW * 0.5;
+
   const mx = (canvas.width - mapW) / 2;
   const my = (canvas.height - mapH) / 2;
 
+  // 下のマップ
   if (mapBase.complete) ctx.drawImage(mapBase, mx, my, mapW, mapH);
 
+  // 上の遮蔽マップ（半透明 50%）
   if (mapMask.complete) {
     ctx.save();
     ctx.globalAlpha = 0.5;
@@ -367,7 +427,159 @@ function draw() {
     ctx.font = "14px sans-serif";
     ctx.fillText(i+1, p.x-4, p.y+5);
   }
+
+  const cRed = centroid(redPoints);
+  const cBlue = centroid(bluePoints);
+
+  if (cRed) drawCross(cRed.x, cRed.y, 10, "pink");
+  if (cBlue) drawCross(cBlue.x, cBlue.y, 10, "lightblue");
+
+  // ===== SP用 =====
+  if (modeCategory === 1) {
+
+    if (spMode === "sp_attack") {
+      if (cRed) {
+        const t = nearest(cRed, bluePoints);
+        if (t) {
+          drawCircle(t.x, t.y, "pink");
+          if (showLines) {
+            ctx.strokeStyle = "purple";
+            ctx.beginPath();
+            ctx.moveTo(cRed.x, cRed.y);
+            ctx.lineTo(t.x, t.y);
+            ctx.stroke();
+          }
+        }
+      }
+      if (cBlue) {
+        const t = nearest(cBlue, redPoints);
+        if (t) {
+          drawCircle(t.x, t.y, "lightblue");
+          if (showLines) {
+            ctx.strokeStyle = "green";
+            ctx.beginPath();
+            ctx.moveTo(cBlue.x, cBlue.y);
+            ctx.lineTo(t.x, t.y);
+            ctx.stroke();
+          }
+        }
+      }
+    }
+
+    if (spMode === "sp_buff") {
+      if (cRed) {
+        const t = nearest(cRed, redPoints);
+        if (t) drawCircle(t.x, t.y, "rgba(255,150,150,0.5)");
+      }
+      if (cBlue) {
+        const t = nearest(cBlue, bluePoints);
+        if (t) drawCircle(t.x, t.y, "rgba(100,150,255,0.5)");
+      }
+    }
+  }
+
+  // ===== ST用 =====
+  if (modeCategory === 2 && selectedPoint) {
+    const p = selectedPoint;
+    const sameList = p.color === "red" ? redPoints : bluePoints;
+    const enemyList = p.color === "red" ? bluePoints : redPoints;
+
+    if (stMode === "st_buffer") {
+      const t = nearest(p, sameList, true);
+      if (t) drawCircle(t.x, t.y, "rgba(255,255,0,0.6)");
+    }
+
+    if (stMode === "st_attacker") {
+      const t = nearest(p, enemyList);
+      if (t) {
+        drawCircle(
+          t.x,
+          t.y,
+          p.color === "red"
+            ? "rgba(255,0,0,0.6)"
+            : "rgba(0,0,255,0.6)"
+        );
+      }
+    }
+
+    if (stMode === "st_hanako") {
+      const t = nearest(p, enemyList);
+      if (t) {
+        const fillColor = p.color === "red"
+          ? "rgba(255,0,0,0.3)"
+          : "rgba(0,0,255,0.3)";
+
+        const radius = 180;
+        const angle = Math.PI / 3;
+        const half = angle / 2;
+
+        const baseAngle = Math.atan2(t.y - p.y, t.x - p.x);
+        const startAngle = baseAngle - half;
+        const endAngle = baseAngle + half;
+
+        ctx.beginPath();
+        ctx.moveTo(p.x, p.y);
+        ctx.arc(p.x, p.y, radius, startAngle, endAngle);
+        ctx.closePath();
+        ctx.fillStyle = fillColor;
+        ctx.fill();
+      }
+    }
+  }
 }
+
+function drawCross(x, y, size, color) {
+  ctx.strokeStyle = color;
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.moveTo(x-size, y-size);
+  ctx.lineTo(x+size, y+size);
+  ctx.moveTo(x+size, y-size);
+  ctx.lineTo(x-size, y+size);
+  ctx.stroke();
+}
+
+function drawCircle(x, y, color) {
+  ctx.strokeStyle = color;
+  ctx.lineWidth = 4;
+  ctx.beginPath();
+  ctx.arc(x, y, 16, 0, Math.PI*2);
+  ctx.stroke();
+}
+
+// ===== UIイベント =====
+document.getElementById("modeToggle").onclick = () => {
+  modeCategory = (modeCategory === 1) ? 2 : 1;
+
+  const btn = document.getElementById("modeToggle");
+  const sub = document.getElementById("subSelect");
+
+  sub.innerHTML = "";
+
+  if (modeCategory === 1) {
+    btn.textContent = "① SP用";
+    sub.appendChild(new Option("攻撃SP", "sp_attack"));
+    sub.appendChild(new Option("バフSP", "sp_buff"));
+    spMode = "sp_attack";
+  } else {
+    btn.textContent = "② ST用";
+    sub.appendChild(new Option("バフ", "st_buffer"));
+    sub.appendChild(new Option("アタッカー", "st_attacker"));
+    sub.appendChild(new Option("ハナコ（水着）", "st_hanako"));
+    stMode = "st_buffer";
+  }
+
+  draw();
+};
+
+// サブ機能切り替え
+document.getElementById("subSelect").onchange = (e) => {
+  const v = e.target.value;
+  if (v === "sp_attack" || v === "sp_buff") spMode = v;
+  if (v === "st_buffer" || v === "st_hanako" || v === "st_attacker")
+    stMode = v;
+  draw();
+};
 
 document.getElementById("toggleColor").onclick = () => {
   mode = (mode === "red") ? "blue" : "red";
