@@ -14,7 +14,10 @@
     margin-top:20px;
   }
 
-  canvas {
+  /* ★ PC向けキャンバスサイズを明示的に指定 */
+  canvas#board {
+    width: 900px;
+    height: 600px;
     border:1px solid #333;
     touch-action:none;
     background-size:cover;
@@ -53,16 +56,6 @@
     margin:30px auto;
     text-align:left;
     line-height:1.6;
-  }
-
-  @media (max-width: 900px) {
-    .mainArea {
-      flex-direction:column;
-      align-items:center;
-    }
-    #coordPanel {
-      width:90%;
-    }
   }
 </style>
 </head>
@@ -105,31 +98,6 @@
   <h3>ツールの使い方</h3>
   <p>このツールは、戦術対抗戦の部隊配置を視覚的に確認するためのものです。</p>
   <p>肝心のマップが歪んでいるため現在調整中です。</p>
-
-  <p><strong>● 点の操作</strong></p>
-  <ul>
-    <li>左クリック / タップ：点を追加</li>
-    <li>右クリック / 長押し：点を削除</li>
-    <li>ドラッグ / スワイプ：点を移動</li>
-    <li>ダブルクリック / ダブルタップ(ST用使用時のみ)：基準点を選択</li>
-  </ul>
-
-  <p><strong>● 機能構成</strong></p>
-  <ul>
-    <li>① SP用
-      <ul>
-        <li>攻撃SP：部隊の重心 → 異色の最短点を円で示す</li>
-        <li>バフSP：部隊の重心 → 同色の最短点を円で示す</li>
-      </ul>
-    </li>
-    <li>② ST用
-      <ul>
-        <li>バッファー：基準点 → 同色の最短点を円で示す</li>
-        <li>アタッカー：基準点 → 異色の最短点を円で示す</li>
-        <li>ハナコ（水着）：基準点 → 異色の最短点方向に扇形</li>
-      </ul>
-    </li>
-  </ul>
 </div>
 
 <script>
@@ -140,7 +108,7 @@ const ctx = canvas.getContext("2d");
 const bg = new Image();
 bg.src = "background.png";
 
-// ★ 新しい2枚のマップ画像（中央に重ねる）
+// マップ画像（3567×2400）
 const mapBase = new Image();
 mapBase.src = "S10 map.png";
 
@@ -165,11 +133,11 @@ let stMode = "st_buffer";
 let lastTapTime = 0;
 let longPressTimer = null;
 
-// ★★★ 修正済み：キャンバスの内部バッファを CSS サイズに合わせる
+/* ★★★ PC向け：CSSサイズを内部バッファに反映する */
 function resizeCanvas() {
   const rect = canvas.getBoundingClientRect();
-  canvas.width = rect.width;
-  canvas.height = rect.height;
+  canvas.width = rect.width;   // 900
+  canvas.height = rect.height; // 600
 
   draw();
   updateCoordPanel();
@@ -177,206 +145,6 @@ function resizeCanvas() {
 
 window.addEventListener("resize", resizeCanvas);
 resizeCanvas();
-// ===== マウス・タッチ操作 =====
-canvas.addEventListener("mousedown", (e) => {
-  const {x, y} = getPos(e);
-  dragTarget = findPoint(x, y);
-  if (dragTarget) { dragging = true; return; }
-  addPoint(x, y);
-});
-
-canvas.addEventListener("mousemove", (e) => {
-  if (!dragging || !dragTarget) return;
-  const {x, y} = getPos(e);
-  dragTarget.x = x;
-  dragTarget.y = y;
-  draw();
-  updateCoordPanel();
-});
-
-canvas.addEventListener("mouseup", () => {
-  dragging = false;
-  dragTarget = null;
-});
-
-canvas.addEventListener("dblclick", (e) => {
-  const {x, y} = getPos(e);
-  setSelectedPoint(x, y);
-});
-
-canvas.addEventListener("contextmenu", (e) => {
-  e.preventDefault();
-  const {x, y} = getPos(e);
-  deletePoint(x, y);
-});
-
-canvas.addEventListener("touchstart", (e) => {
-  const {x, y} = getPos(e.touches[0]);
-  const now = Date.now();
-  if (now - lastTapTime < 300) {
-    setSelectedPoint(x, y);
-    lastTapTime = 0;
-    return;
-  }
-  lastTapTime = now;
-
-  dragTarget = findPoint(x, y);
-  if (dragTarget) dragging = true;
-  else longPressTimer = setTimeout(() => deletePoint(x, y), 500);
-});
-
-canvas.addEventListener("touchmove", (e) => {
-  if (!dragging || !dragTarget) return;
-  const {x, y} = getPos(e.touches[0]);
-  dragTarget.x = x;
-  dragTarget.y = y;
-  draw();
-  updateCoordPanel();
-});
-
-canvas.addEventListener("touchend", (e) => {
-  clearTimeout(longPressTimer);
-  if (!dragging) {
-    const {x, y} = getPos(e.changedTouches[0]);
-    addPoint(x, y);
-  }
-  dragging = false;
-  dragTarget = null;
-});
-
-// ===== 共通関数 =====
-function getPos(e) {
-  const rect = canvas.getBoundingClientRect();
-  return { x: e.clientX - rect.left, y: e.clientY - rect.top };
-}
-
-function findPoint(x, y) {
-  for (const p of redPoints) if (dist(p, {x,y}) < 12) return p;
-  for (const p of bluePoints) if (dist(p, {x,y}) < 12) return p;
-  return null;
-}
-
-function addPoint(x, y) {
-  if (mode === "red" && redPoints.length < 4) redPoints.push({x,y});
-  if (mode === "blue" && bluePoints.length < 4) bluePoints.push({x,y});
-  updateCounter();
-  draw();
-  updateCoordPanel();
-}
-
-function deletePoint(x, y) {
-  redPoints = redPoints.filter(p => dist(p, {x,y}) >= 12);
-  bluePoints = bluePoints.filter(p => dist(p, {x,y}) >= 12);
-  updateCounter();
-  draw();
-  updateCoordPanel();
-}
-
-function setSelectedPoint(x, y) {
-  for (const p of redPoints) {
-    if (dist(p, {x,y}) < 12) {
-      selectedPoint = {...p, color:"red"};
-      draw();
-      updateCoordPanel();
-      return;
-    }
-  }
-  for (const p of bluePoints) {
-    if (dist(p, {x,y}) < 12) {
-      selectedPoint = {...p, color:"blue"};
-      draw();
-      updateCoordPanel();
-      return;
-    }
-  }
-}
-
-function dist(a, b) { return Math.hypot(a.x - b.x, a.y - b.y); }
-
-function centroid(list) {
-  if (list.length === 0) return null;
-  return {
-    x: list.reduce((s,p)=>s+p.x,0) / list.length,
-    y: list.reduce((s,p)=>s+p.y,0) / list.length
-  };
-}
-
-function nearest(from, list, excludeSelf=false) {
-  let best = null, bestDist = Infinity;
-  for (const p of list) {
-    if (excludeSelf && p.x === from.x && p.y === from.y) continue;
-    const d = dist(from, p);
-    if (d < bestDist) { bestDist = d; best = p; }
-  }
-  return best;
-}
-
-function updateCounter() {
-  redCount.textContent = redPoints.length;
-  blueCount.textContent = bluePoints.length;
-  redCount.className = redPoints.length === 4 ? "max" : "";
-  blueCount.className = bluePoints.length === 4 ? "max" : "";
-}
-
-// ===== 座標パネル更新 =====
-function updateCoordPanel() {
-  const panel = document.getElementById("coordList");
-  panel.innerHTML = "";
-
-  const cx = canvas.width / 2;
-  const cy = canvas.height / 2;
-
-  function addRow(color, index, point) {
-    const id = `${color}${index}`;
-    let x = "";
-    let y = "";
-
-    if (point) {
-      x = (point.x - cx).toFixed(1);
-      y = (point.y - cy).toFixed(1);
-    }
-
-    panel.innerHTML += `
-      <div>
-        ${color === "red" ? "赤" : "青"}${index}：
-        X <input type="number" step="0.1" id="${id}_x" value="${x}">
-        Y <input type="number" step="0.1" id="${id}_y" value="${y}">
-      </div>
-    `;
-  }
-
-  for (let i = 1; i <= 4; i++) addRow("red", i, redPoints[i-1]);
-  for (let i = 1; i <= 4; i++) addRow("blue", i, bluePoints[i-1]);
-}
-
-// ===== 座標反映 =====
-document.getElementById("applyCoords").onclick = () => {
-  const cx = canvas.width / 2;
-  const cy = canvas.height / 2;
-
-  function apply(color) {
-    const newList = [];
-    for (let i = 1; i <= 4; i++) {
-      const x = document.getElementById(`${color}${i}_x`).value;
-      const y = document.getElementById(`${color}${i}_y`).value;
-
-      if (x !== "" && y !== "") {
-        newList.push({
-          x: Number(x) + cx,
-          y: Number(y) + cy
-        });
-      }
-    }
-    return newList;
-  }
-
-  redPoints = apply("red");
-  bluePoints = apply("blue");
-
-  updateCounter();
-  draw();
-  updateCoordPanel();
-};
 // ===== 描画 =====
 function draw() {
   ctx.clearRect(0,0,canvas.width,canvas.height);
@@ -384,9 +152,10 @@ function draw() {
   // 背景画像
   ctx.drawImage(bg, 0, 0, canvas.width, canvas.height);
 
-  // ★ 新しい2枚のマップ画像を中央に重ねる
-  const mapW = canvas.width * 0.9;
-  const mapH = mapW * 0.5;
+  // ★ PC向け：マップ画像（3567×2400）を適切に縮小して中央に配置
+  const aspect = 3567 / 2400; // 元画像のアスペクト比
+  const mapW = canvas.width * 0.9; // 810px
+  const mapH = mapW / aspect;      // ≒ 545px
 
   const mx = (canvas.width - mapW) / 2;
   const my = (canvas.height - mapH) / 2;
