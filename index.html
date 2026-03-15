@@ -4,7 +4,12 @@
 <meta charset="UTF-8">
 <title>シッテムの箱</title>
 <style>
-  body { text-align:center; font-family:sans-serif; margin:0; padding:0; }
+  body {
+    text-align:center;
+    font-family:sans-serif;
+    margin:0;
+    padding:0;
+  }
 
   .mainArea {
     display:flex;
@@ -14,7 +19,7 @@
     margin-top:20px;
   }
 
-  /* ★ PC向けキャンバスサイズを明示的に指定 */
+  /* ★ PC向けキャンバスサイズ（内部バッファと同期） */
   canvas#board {
     width: 900px;
     height: 600px;
@@ -97,24 +102,23 @@
 <div class="description">
   <h3>ツールの使い方</h3>
   <p>このツールは、戦術対抗戦の部隊配置を視覚的に確認するためのものです。</p>
-  <p>肝心のマップが歪んでいるため現在調整中です。</p>
 </div>
 
 <script>
 const canvas = document.getElementById("board");
 const ctx = canvas.getContext("2d");
 
-// 背景画像
+/* 画像読み込み */
 const bg = new Image();
 bg.src = "background.png";
 
-// マップ画像（3567×2400）
 const mapBase = new Image();
 mapBase.src = "S10 map.png";
 
 const mapMask = new Image();
 mapMask.src = "S10 map 遮蔽.png";
 
+/* 状態管理 */
 let mode = "red";
 let showLines = true;
 
@@ -136,8 +140,8 @@ let longPressTimer = null;
 /* ★★★ PC向け：CSSサイズを内部バッファに反映する */
 function resizeCanvas() {
   const rect = canvas.getBoundingClientRect();
-  canvas.width = rect.width;   // 900
-  canvas.height = rect.height; // 600
+  canvas.width = rect.width;
+  canvas.height = rect.height;
 
   draw();
   updateCoordPanel();
@@ -145,7 +149,204 @@ function resizeCanvas() {
 
 window.addEventListener("resize", resizeCanvas);
 resizeCanvas();
-// ===== 描画 =====
+
+/* ===== マウス・タッチ操作（完全復活） ===== */
+canvas.addEventListener("mousedown", (e) => {
+  const {x, y} = getPos(e);
+  dragTarget = findPoint(x, y);
+  if (dragTarget) { dragging = true; return; }
+  addPoint(x, y);
+});
+
+canvas.addEventListener("mousemove", (e) => {
+  if (!dragging || !dragTarget) return;
+  const {x, y} = getPos(e);
+  dragTarget.x = x;
+  dragTarget.y = y;
+  draw();
+  updateCoordPanel();
+});
+
+canvas.addEventListener("mouseup", () => {
+  dragging = false;
+  dragTarget = null;
+});
+
+canvas.addEventListener("contextmenu", (e) => {
+  e.preventDefault();
+  const {x, y} = getPos(e);
+  deletePoint(x, y);
+});
+
+/* ===== スマホ操作（PCでも問題なし） ===== */
+canvas.addEventListener("touchstart", (e) => {
+  const {x, y} = getPos(e.touches[0]);
+  const now = Date.now();
+  if (now - lastTapTime < 300) {
+    setSelectedPoint(x, y);
+    lastTapTime = 0;
+    return;
+  }
+  lastTapTime = now;
+
+  dragTarget = findPoint(x, y);
+  if (dragTarget) dragging = true;
+  else longPressTimer = setTimeout(() => deletePoint(x, y), 500);
+});
+
+canvas.addEventListener("touchmove", (e) => {
+  if (!dragging || !dragTarget) return;
+  const {x, y} = getPos(e.touches[0]);
+  dragTarget.x = x;
+  dragTarget.y = y;
+  draw();
+  updateCoordPanel();
+});
+
+canvas.addEventListener("touchend", (e) => {
+  clearTimeout(longPressTimer);
+  if (!dragging) {
+    const {x, y} = getPos(e.changedTouches[0]);
+    addPoint(x, y);
+  }
+  dragging = false;
+  dragTarget = null;
+});
+
+/* ===== 共通関数 ===== */
+function getPos(e) {
+  const rect = canvas.getBoundingClientRect();
+  return { x: e.clientX - rect.left, y: e.clientY - rect.top };
+}
+
+function findPoint(x, y) {
+  for (const p of redPoints) if (dist(p, {x,y}) < 12) return p;
+  for (const p of bluePoints) if (dist(p, {x,y}) < 12) return p;
+  return null;
+}
+
+function addPoint(x, y) {
+  if (mode === "red" && redPoints.length < 4) redPoints.push({x,y});
+  if (mode === "blue" && bluePoints.length < 4) bluePoints.push({x,y});
+  updateCounter();
+  draw();
+  updateCoordPanel();
+}
+
+function deletePoint(x, y) {
+  redPoints = redPoints.filter(p => dist(p, {x,y}) >= 12);
+  bluePoints = bluePoints.filter(p => dist(p, {x,y}) >= 12);
+  updateCounter();
+  draw();
+  updateCoordPanel();
+}
+
+function setSelectedPoint(x, y) {
+  for (const p of redPoints) {
+    if (dist(p, {x,y}) < 12) {
+      selectedPoint = {...p, color:"red"};
+      draw();
+      updateCoordPanel();
+      return;
+    }
+  }
+  for (const p of bluePoints) {
+    if (dist(p, {x,y}) < 12) {
+      selectedPoint = {...p, color:"blue"};
+      draw();
+      updateCoordPanel();
+      return;
+    }
+  }
+}
+
+function dist(a, b) { return Math.hypot(a.x - b.x, a.y - b.y); }
+
+function centroid(list) {
+  if (list.length === 0) return null;
+  return {
+    x: list.reduce((s,p)=>s+p.x,0) / list.length,
+    y: list.reduce((s,p)=>s+p.y,0) / list.length
+  };
+}
+
+function nearest(from, list, excludeSelf=false) {
+  let best = null, bestDist = Infinity;
+  for (const p of list) {
+    if (excludeSelf && p.x === from.x && p.y === from.y) continue;
+    const d = dist(from, p);
+    if (d < bestDist) { bestDist = d; best = p; }
+  }
+  return best;
+}
+
+function updateCounter() {
+  redCount.textContent = redPoints.length;
+  blueCount.textContent = bluePoints.length;
+  redCount.className = redPoints.length === 4 ? "max" : "";
+  blueCount.className = bluePoints.length === 4 ? "max" : "";
+}
+/* ===== 座標パネル更新 ===== */
+function updateCoordPanel() {
+  const panel = document.getElementById("coordList");
+  panel.innerHTML = "";
+
+  const cx = canvas.width / 2;
+  const cy = canvas.height / 2;
+
+  function addRow(color, index, point) {
+    const id = `${color}${index}`;
+    let x = "";
+    let y = "";
+
+    if (point) {
+      x = (point.x - cx).toFixed(1);
+      y = (point.y - cy).toFixed(1);
+    }
+
+    panel.innerHTML += `
+      <div>
+        ${color === "red" ? "赤" : "青"}${index}：
+        X <input type="number" step="0.1" id="${id}_x" value="${x}">
+        Y <input type="number" step="0.1" id="${id}_y" value="${y}">
+      </div>
+    `;
+  }
+
+  for (let i = 1; i <= 4; i++) addRow("red", i, redPoints[i-1]);
+  for (let i = 1; i <= 4; i++) addRow("blue", i, bluePoints[i-1]);
+}
+
+/* ===== 座標反映 ===== */
+document.getElementById("applyCoords").onclick = () => {
+  const cx = canvas.width / 2;
+  const cy = canvas.height / 2;
+
+  function apply(color) {
+    const newList = [];
+    for (let i = 1; i <= 4; i++) {
+      const x = document.getElementById(`${color}${i}_x`).value;
+      const y = document.getElementById(`${color}${i}_y`).value;
+
+      if (x !== "" && y !== "") {
+        newList.push({
+          x: Number(x) + cx,
+          y: Number(y) + cy
+        });
+      }
+    }
+    return newList;
+  }
+
+  redPoints = apply("red");
+  bluePoints = apply("blue");
+
+  updateCounter();
+  draw();
+  updateCoordPanel();
+};
+
+/* ===== 描画 ===== */
 function draw() {
   ctx.clearRect(0,0,canvas.width,canvas.height);
 
@@ -153,17 +354,15 @@ function draw() {
   ctx.drawImage(bg, 0, 0, canvas.width, canvas.height);
 
   // ★ PC向け：マップ画像（3567×2400）を適切に縮小して中央に配置
-  const aspect = 3567 / 2400; // 元画像のアスペクト比
-  const mapW = canvas.width * 0.9; // 810px
-  const mapH = mapW / aspect;      // ≒ 545px
+  const aspect = 3567 / 2400;
+  const mapW = canvas.width * 0.9;
+  const mapH = mapW / aspect;
 
   const mx = (canvas.width - mapW) / 2;
   const my = (canvas.height - mapH) / 2;
 
-  // 下のマップ
   if (mapBase.complete) ctx.drawImage(mapBase, mx, my, mapW, mapH);
 
-  // 上の遮蔽マップ（半透明 50%）
   if (mapMask.complete) {
     ctx.save();
     ctx.globalAlpha = 0.5;
@@ -203,7 +402,7 @@ function draw() {
   if (cRed) drawCross(cRed.x, cRed.y, 10, "pink");
   if (cBlue) drawCross(cBlue.x, cBlue.y, 10, "lightblue");
 
-  // ===== SP用 =====
+  /* ===== SP用 ===== */
   if (modeCategory === 1) {
 
     if (spMode === "sp_attack") {
@@ -247,7 +446,7 @@ function draw() {
     }
   }
 
-  // ===== ST用 =====
+  /* ===== ST用 ===== */
   if (modeCategory === 2 && selectedPoint) {
     const p = selectedPoint;
     const sameList = p.color === "red" ? redPoints : bluePoints;
@@ -297,6 +496,7 @@ function draw() {
   }
 }
 
+/* ===== 補助描画 ===== */
 function drawCross(x, y, size, color) {
   ctx.strokeStyle = color;
   ctx.lineWidth = 2;
@@ -316,7 +516,7 @@ function drawCircle(x, y, color) {
   ctx.stroke();
 }
 
-// ===== UIイベント =====
+/* ===== UIイベント ===== */
 document.getElementById("modeToggle").onclick = () => {
   modeCategory = (modeCategory === 1) ? 2 : 1;
 
@@ -341,7 +541,6 @@ document.getElementById("modeToggle").onclick = () => {
   draw();
 };
 
-// サブ機能切り替え
 document.getElementById("subSelect").onchange = (e) => {
   const v = e.target.value;
   if (v === "sp_attack" || v === "sp_buff") spMode = v;
