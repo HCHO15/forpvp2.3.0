@@ -1,496 +1,885 @@
 <!DOCTYPE html>
-<html>
+<html lang="ja">
 <head>
-<meta charset="UTF-8">
-<title>シッテムの箱(開発中)</title>
-<style>
-  body {
-    text-align:center;
-    font-family:sans-serif;
-    margin:0;
-    padding:0;
-  }
+  <meta charset="UTF-8">
+  <title>シッテムの箱 - forbapvp1.0.0</title>
 
-  .mainArea {
-    display:flex;
-    justify-content:center;
-    align-items:flex-start;
-    gap:20px;
-    margin-top:20px;
-  }
+  <style>
+    body {
+      font-family: system-ui, sans-serif;
+      margin: 0;
+      padding: 16px;
+      background: #f5f5f5;
+    }
+    h1 {
+      margin-top: 0;
+      font-size: 20px;
+    }
 
-  canvas#board {
-    width: 900px;
-    height: 600px;
-    border:1px solid #333;
-    touch-action:none;
-    background-size:cover;
-  }
+    .container {
+      display: flex;
+      gap: 16px;
+    }
 
-  button {
-    margin:5px;
-    padding:12px 20px;
-    font-size:16px;
-  }
+    .left-panel {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      width: 820px;
+    }
 
-  #counter {
-    margin-top:10px;
-    font-size:18px;
-  }
+    .controls {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
 
-  .max { color:red; font-weight:bold; }
+    #canvasWrapper {
+      background: #fff;
+      padding: 8px;
+      border-radius: 4px;
+      box-shadow: 0 0 4px rgba(0,0,0,0.1);
+    }
 
-  #coordPanel {
-    text-align:left;
-    padding:10px;
-    border:1px solid #aaa;
-    border-radius:8px;
-    background:#fafafa;
-    width:260px;
-  }
+    #mainCanvas {
+      border: 1px solid #ccc;
+      background: #ffffff;
+      cursor: crosshair;
+    }
 
-  #coordPanel input {
-    width:60px;
-    margin:3px;
-  }
+    .counts {
+      font-size: 13px;
+      margin-left: 4px;
+    }
 
-  .description {
-    width:90%;
-    max-width:900px;
-    margin:30px auto;
-    text-align:left;
-    line-height:1.6;
-  }
-</style>
+    .right-panel {
+      background: #fff;
+      padding: 8px;
+      border-radius: 4px;
+      box-shadow: 0 0 4px rgba(0,0,0,0.1);
+      min-width: 260px;
+    }
+
+    table {
+      border-collapse: collapse;
+      width: 100%;
+      margin-bottom: 8px;
+      font-size: 12px;
+    }
+    th, td {
+      border: 1px solid #ccc;
+      padding: 2px 4px;
+      text-align: center;
+    }
+    th {
+      background: #f0f0f0;
+    }
+
+    /* 範囲攻撃 UI */
+    #rangeControls {
+      display: none;
+      margin-top: 6px;
+      font-size: 12px;
+    }
+    #rangeControls input, #rangeControls select {
+      margin-left: 4px;
+    }
+  </style>
 </head>
+
 <body>
+  <h1>シッテムの箱</h1>
 
-<h2>シッテムの箱</h2>
+ <!-- ▼▼▼ ツール説明（折りたたみ） ▼▼▼ -->
+<div style="margin-bottom: 12px;">
+  <details>
+    <summary style="cursor: pointer; font-size: 15px; font-weight: bold;">
+      このツールの使い方（クリックで開く）
+    </summary>
+    <div style="padding: 8px 12px; background: #fafafa; border: 1px solid #ddd; border-radius: 4px; margin-top: 6px; font-size: 14px; line-height: 1.6;">
+      <p><strong>シッテムの箱</strong>は、PvPマップ上に赤点・青点を配置し、位置関係・重心・最短距離・範囲攻撃などを視覚的に確認できる戦術支援ツールです。</p>
 
-<button id="toggleColor">現在：赤 → 青に切替</button>
-<button id="toggleLine">線の表示 ON/OFF</button>
-<button id="reset">リセット</button>
-<button id="saveImage">画像保存</button>
+      <h4>■ 基本操作</h4>
+      <ul>
+        <li><strong>左クリック：</strong> 点を追加</li>
+        <li><strong>ドラッグ：</strong> 点を移動</li>
+        <li><strong>右クリック：</strong> 点を削除</li>
+        <li><strong>色切り替え：</strong> 赤 ↔ 青 を変更</li>
+      </ul>
 
-<br>
+      <h4>■ 基準点の選択</h4>
+      <ul>
+        <li>座標表の <strong>ラジオボタン</strong> をクリック</li>
+        <li>または、キャンバス上の点を <strong>ダブルクリック</strong></li>
+      </ul>
 
-<button id="modeToggle">① SP用</button>
+      <h4>■ サブ機能（モード）</h4>
+      <ul>
+        <li><strong>攻撃SP：</strong> 赤重心→最も近い青点、青重心→最も近い赤点 を強調</li>
+        <li><strong>バフSP：</strong> 赤重心→最も近い赤点、青重心→最も近い青点 を強調</li>
+        <li><strong>攻撃ST：</strong> 基準点→最も近い異色の点 を強調</li>
+        <li><strong>バフST：</strong> 基準点→最も近い同色の点 を強調</li>
+        <li><strong>範囲攻撃：</strong> 基準点を中心に円/扇形を描画（半径・角度調整可）</li>
+      </ul>
 
-<select id="subSelect" style="margin-left:10px;">
-  <option value="sp_attack">攻撃SP</option>
-  <option value="sp_buff">バフSP</option>
-</select>
+      <h4>■ その他</h4>
+      <ul>
+        <li><strong>画像保存：</strong> 現在の配置をPNGで保存</li>
+        <li><strong>ショートカット：</strong> 範囲攻撃のプリセット（ツバキEXなど）</li>
+      </ul>
 
-<div id="counter">
-  赤: <span id="redCount">0</span> / 4　
-  青: <span id="blueCount">0</span> / 4
+      <p>直感的に操作できるよう設計されています。ぜひ自由に触ってみてください。</p>
+    </div>
+  </details>
 </div>
+<!-- ▲▲▲ ツール説明（折りたたみ） ▲▲▲ -->
+  
+  <div class="container">
+    <div class="left-panel">
 
-<div class="mainArea">
-  <div style="flex-shrink:0;">
-    <canvas id="board"></canvas>
-  </div>
+      <!-- ボタン -->
+      <div class="controls">
+        <button id="btnColor">現在：赤 → 青に切り替え</button>
+        <button id="btnReset">リセット</button>
+        <button id="btnSave">画像保存</button>
 
-  <div id="coordPanel">
-    <h3>座標一覧 / 編集（中央原点）</h3>
-    <div id="coordList"></div>
-    <button id="applyCoords">座標を反映</button>
+        <select id="modeSelect">
+          <option value="0">攻撃SP</option>
+          <option value="1">バフSP</option>
+          <option value="2">攻撃ST</option>
+          <option value="3">バフST</option>
+          <option value="4">範囲攻撃</option>
+        </select>
+      </div>
+
+      <!-- 範囲攻撃 UI -->
+      <div id="rangeControls">
+        <div>
+          半径(m)：
+          <input type="range" id="radiusSlider" min="50" max="1000" step="10" value="700">
+          <span id="radiusValue">700</span>
+
+          <select id="shortcutSelect">
+            <option value="manual">手動</option>
+            <option value="tsubaki">ツバキEX</option>
+            <option value="hanako">ハナコ（水着）EX</option>
+            <option value="hoshinoEX">ホシノ（臨戦）EX</option>
+            <option value="hoshinoSS">ホシノ（臨戦）SS</option>
+            <option value="yakumo">ヤクモEX</option>
+          </select>
+        </div>
+
+        <div>
+          角度(°)：
+          <input type="number" id="angleInput" min="1" max="360" value="360">
+        </div>
+      </div>
+
+      <div class="counts" id="countsDisplay">
+        赤点：0/4　青点：0/4
+      </div>
+
+      <div id="canvasWrapper">
+        <canvas id="mainCanvas" width="800" height="520"></canvas>
+      </div>
+
+    </div>
+
+    <!-- 座標表 -->
+    <div class="right-panel">
+      <div class="table-title">赤点座標</div>
+      <table>
+        <thead>
+          <tr><th>#</th><th>x</th><th>y</th><th>基準</th></tr>
+        </thead>
+        <tbody id="redTableBody"></tbody>
+      </table>
+
+      <div class="table-title">青点座標</div>
+      <table>
+        <thead>
+          <tr><th>#</th><th>x</th><th>y</th><th>基準</th></tr>
+        </thead>
+        <tbody id="blueTableBody"></tbody>
+      </table>
+    </div>
   </div>
-</div>
 
 <script>
-/* ==========================
-   初期設定
-========================== */
-const canvas = document.getElementById("board");
+/* =========================
+   基本設定
+========================= */
+const canvas = document.getElementById("mainCanvas");
 const ctx = canvas.getContext("2d");
+const width = canvas.width;
+const height = canvas.height;
 
-const bg = new Image();
-bg.src = "background.png";
+const originX = width / 2;
+const originY = height / 2;
 
-const mapBase = new Image();
-mapBase.src = "S10 map.png";
+const btnColor = document.getElementById("btnColor");
+const btnReset = document.getElementById("btnReset");
+const btnSave = document.getElementById("btnSave");
+const modeSelect = document.getElementById("modeSelect");
 
-const mapMask = new Image();
-mapMask.src = "S10 map 遮蔽.png";
+const rangeControls = document.getElementById("rangeControls");
+const radiusSlider = document.getElementById("radiusSlider");
+const radiusValue = document.getElementById("radiusValue");
+const angleInput = document.getElementById("angleInput");
+const shortcutSelect = document.getElementById("shortcutSelect");
 
-let mode = "red";
-let showLines = true;
+const countsDisplay = document.getElementById("countsDisplay");
+const redTableBody = document.getElementById("redTableBody");
+const blueTableBody = document.getElementById("blueTableBody");
+
+const MAX_POINTS = 4;
+const POINT_RADIUS = 10;
+const HIT_RADIUS = 12;
+
+const COLOR_RED = "#e53935";
+const COLOR_BLUE = "#1e88e5";
+const COLOR_RED_LIGHT = "rgba(229,57,53,0.55)";   // ★ 濃くした
+const COLOR_BLUE_LIGHT = "rgba(30,136,229,0.55)"; // ★ 濃くした
+
+let modeIndex = 0;
+let currentColor = "red";
 
 let redPoints = [];
 let bluePoints = [];
 
-let dragging = false;
-let dragTarget = null;
+let draggingPoint = null;
+let dragOffsetX = 0;
+let dragOffsetY = 0;
+let isDragging = false;
 
-let selectedPoint = null;
+let basePoint = null;
 
-let modeCategory = 1;
-let spMode = "sp_attack";
-let stMode = "st_buffer";
+/* 背景画像 */
+const bgImage = new Image();
+bgImage.src = "S10 map.png";
+let bgLoaded = false;
+bgImage.onload = () => { bgLoaded = true; redraw(); };
 
-let lastTapTime = 0;
-let longPressTimer = null;
+const bgImage2 = new Image();
+bgImage2.src = "S10 map 遮蔽.png";
+let bg2Loaded = false;
+bgImage2.onload = () => { bg2Loaded = true; redraw(); };
 
-/* ==========================
-   キャンバス内部バッファを CSS サイズに同期
-========================== */
-function resizeCanvas() {
-  const rect = canvas.getBoundingClientRect();
-  canvas.width = rect.width;
-  canvas.height = rect.height;
-  draw();
-  updateCoordPanel();
+/* =========================
+   座標変換
+========================= */
+function logicalToCanvas(x, y) {
+  return { cx: originX + x, cy: originY - y };
+}
+function canvasToLogical(cx, cy) {
+  return { x: cx - originX, y: originY - cy };
 }
 
-window.addEventListener("load", resizeCanvas);
-window.addEventListener("resize", resizeCanvas);
+/* =========================
+   テーブル生成
+========================= */
+function initTables() {
+  for (let i = 1; i <= MAX_POINTS; i++) {
+    const redRow = document.createElement("tr");
+    redRow.innerHTML = `
+      <td>${i}</td>
+      <td><input class="coord-input" data-color="red" data-id="${i}" data-axis="x"></td>
+      <td><input class="coord-input" data-color="red" data-id="${i}" data-axis="y"></td>
+      <td><input type="radio" name="redBase" data-color="red" data-id="${i}"></td>
+    `;
+    redTableBody.appendChild(redRow);
 
-/* ==========================
-   マウス操作
-========================== */
-canvas.addEventListener("mousedown", (e) => {
-  const {x, y} = getPos(e);
-  dragTarget = findPoint(x, y);
-  if (dragTarget) { dragging = true; return; }
-  addPoint(x, y);
-});
-
-canvas.addEventListener("mousemove", (e) => {
-  if (!dragging || !dragTarget) return;
-  const {x, y} = getPos(e);
-  dragTarget.x = x;
-  dragTarget.y = y;
-  draw();
-  updateCoordPanel();
-});
-
-canvas.addEventListener("mouseup", () => {
-  dragging = false;
-  dragTarget = null;
-});
-
-canvas.addEventListener("contextmenu", (e) => {
-  e.preventDefault();
-  const {x, y} = getPos(e);
-  deletePoint(x, y);
-});
-
-/* ==========================
-   タッチ操作
-========================== */
-canvas.addEventListener("touchstart", (e) => {
-  const {x, y} = getPos(e.touches[0]);
-  const now = Date.now();
-  if (now - lastTapTime < 300) {
-    setSelectedPoint(x, y);
-    lastTapTime = 0;
-    return;
+    const blueRow = document.createElement("tr");
+    blueRow.innerHTML = `
+      <td>${i}</td>
+      <td><input class="coord-input" data-color="blue" data-id="${i}" data-axis="x"></td>
+      <td><input class="coord-input" data-color="blue" data-id="${i}" data-axis="y"></td>
+      <td><input type="radio" name="blueBase" data-color="blue" data-id="${i}"></td>
+    `;
+    blueTableBody.appendChild(blueRow);
   }
-  lastTapTime = now;
 
-  dragTarget = findPoint(x, y);
-  if (dragTarget) dragging = true;
-  else longPressTimer = setTimeout(() => deletePoint(x, y), 500);
-});
+  document.querySelectorAll(".coord-input").forEach(input =>
+    input.addEventListener("change", onCoordInputChange)
+  );
 
-canvas.addEventListener("touchmove", (e) => {
-  if (!dragging || !dragTarget) return;
-  const {x, y} = getPos(e.touches[0]);
-  dragTarget.x = x;
-  dragTarget.y = y;
-  draw();
-  updateCoordPanel();
-});
-
-canvas.addEventListener("touchend", (e) => {
-  clearTimeout(longPressTimer);
-  if (!dragging) {
-    const {x, y} = getPos(e.changedTouches[0]);
-    addPoint(x, y);
-  }
-  dragging = false;
-  dragTarget = null;
-});
-
-/* ==========================
-   共通関数
-========================== */
-function getPos(e) {
-  const rect = canvas.getBoundingClientRect();
-  return { x: e.clientX - rect.left, y: e.clientY - rect.top };
+  document.querySelectorAll("input[type=radio]").forEach(r =>
+    r.addEventListener("change", onBaseSelect)
+  );
 }
 
-function findPoint(x, y) {
-  for (const p of redPoints) if (dist(p, {x,y}) < 12) return p;
-  for (const p of bluePoints) if (dist(p, {x,y}) < 12) return p;
+function onBaseSelect(e) {
+  const color = e.target.dataset.color;
+  const id = parseInt(e.target.dataset.id, 10);
+  basePoint = { color, id };
+  redraw();
+}
+
+function onCoordInputChange(e) {
+  const input = e.target;
+  const color = input.dataset.color;
+  const id = parseInt(input.dataset.id, 10);
+  const axis = input.dataset.axis;
+  const value = parseFloat(input.value);
+  if (isNaN(value)) return;
+
+  let arr = color === "red" ? redPoints : bluePoints;
+  let p = arr.find(pt => pt.id === id);
+
+  if (!p) {
+    if (arr.length >= MAX_POINTS) {
+      updateTablesFromPoints();
+      return;
+    }
+    p = { id, color, x: 0, y: 0 };
+    arr.push(p);
+  }
+
+  p[axis] = value;
+  redraw();
+  updateTablesFromPoints();
+  updateCounts();
+}
+
+function updateTablesFromPoints() {
+  document.querySelectorAll(".coord-input").forEach(i => i.value = "");
+
+  redPoints.forEach(p => {
+    document.querySelector(`.coord-input[data-color="red"][data-id="${p.id}"][data-axis="x"]`).value = Math.round(p.x);
+    document.querySelector(`.coord-input[data-color="red"][data-id="${p.id}"][data-axis="y"]`).value = Math.round(p.y);
+  });
+
+  bluePoints.forEach(p => {
+    document.querySelector(`.coord-input[data-color="blue"][data-id="${p.id}"][data-axis="x"]`).value = Math.round(p.x);
+    document.querySelector(`.coord-input[data-color="blue"][data-id="${p.id}"][data-axis="y"]`).value = Math.round(p.y);
+  });
+}
+
+/* =========================
+   点操作
+========================= */
+function getNextId(arr) {
+  for (let i = 1; i <= MAX_POINTS; i++) {
+    if (!arr.find(p => p.id === i)) return i;
+  }
   return null;
 }
 
-function addPoint(x, y) {
-  if (mode === "red" && redPoints.length < 4) redPoints.push({x,y});
-  if (mode === "blue" && bluePoints.length < 4) bluePoints.push({x,y});
-  updateCounter();
-  draw();
-  updateCoordPanel();
+function addPoint(color, x, y) {
+  const arr = color === "red" ? redPoints : bluePoints;
+  if (arr.length >= MAX_POINTS) return;
+  const id = getNextId(arr);
+  arr.push({ id, color, x, y });
 }
 
-function deletePoint(x, y) {
-  redPoints = redPoints.filter(p => dist(p, {x,y}) >= 12);
-  bluePoints = bluePoints.filter(p => dist(p, {x,y}) >= 12);
-  updateCounter();
-  draw();
-  updateCoordPanel();
-}
+function removePoint(p) {
+  if (p.color === "red") redPoints = redPoints.filter(x => x !== p);
+  else bluePoints = bluePoints.filter(x => x !== p);
 
-function setSelectedPoint(x, y) {
-  for (const p of redPoints) {
-    if (dist(p, {x,y}) < 12) {
-      selectedPoint = {...p, color:"red"};
-      draw();
-      updateCoordPanel();
-      return;
-    }
-  }
-  for (const p of bluePoints) {
-    if (dist(p, {x,y}) < 12) {
-      selectedPoint = {...p, color:"blue"};
-      draw();
-      updateCoordPanel();
-      return;
-    }
+  if (basePoint && basePoint.color === p.color && basePoint.id === p.id) {
+    basePoint = null;
   }
 }
 
-function dist(a, b) { return Math.hypot(a.x - b.x, a.y - b.y); }
-
-function centroid(list) {
-  if (list.length === 0) return null;
-  return {
-    x: list.reduce((s,p)=>s+p.x,0) / list.length,
-    y: list.reduce((s,p)=>s+p.y,0) / list.length
-  };
+function findPointAtCanvasPos(cx, cy) {
+  const all = redPoints.concat(bluePoints);
+  for (let i = all.length - 1; i >= 0; i--) {
+    const p = all[i];
+    const { cx: px, cy: py } = logicalToCanvas(p.x, p.y);
+    const dx = cx - px;
+    const dy = cy - py;
+    if (Math.sqrt(dx * dx + dy * dy) <= HIT_RADIUS) return p;
+  }
+  return null;
 }
 
-function nearest(from, list, excludeSelf=false) {
-  let best = null, bestDist = Infinity;
-  for (const p of list) {
-    if (excludeSelf && p.x === from.x && p.y === from.y) continue;
-    const d = dist(from, p);
-    if (d < bestDist) { bestDist = d; best = p; }
-  }
-  return best;
-}
-
-function updateCounter() {
-  redCount.textContent = redPoints.length;
-  blueCount.textContent = bluePoints.length;
-  redCount.className = redPoints.length === 4 ? "max" : "";
-  blueCount.className = bluePoints.length === 4 ? "max" : "";
-}
-
-/* ==========================
-   座標パネル
-========================== */
-function updateCoordPanel() {
-  const panel = document.getElementById("coordList");
-  panel.innerHTML = "";
-
-  const cx = canvas.width / 2;
-  const cy = canvas.height / 2;
-
-  function addRow(color, index, point) {
-    const id = `${color}${index}`;
-    let x = "";
-    let y = "";
-
-    if (point) {
-      x = (point.x - cx).toFixed(1);
-      y = (point.y - cy).toFixed(1);
-    }
-
-    panel.innerHTML += `
-      <div>
-        ${color === "red" ? "赤" : "青"}${index}：
-        X <input type="number" step="0.1" id="${id}_x" value="${x}">
-        Y <input type="number" step="0.1" id="${id}_y" value="${y}">
-      </div>
-    `;
-  }
-
-  for (let i = 1; i <= 4; i++) addRow("red", i, redPoints[i-1]);
-  for (let i = 1; i <= 4; i++) addRow("blue", i, bluePoints[i-1]);
-}
-
-document.getElementById("applyCoords").onclick = () => {
-  const cx = canvas.width / 2;
-  const cy = canvas.height / 2;
-
-  function apply(color) {
-    const newList = [];
-    for (let i = 1; i <= 4; i++) {
-      const x = document.getElementById(`${color}${i}_x`).value;
-      const y = document.getElementById(`${color}${i}_y`).value;
-
-      if (x !== "" && y !== "") {
-        newList.push({
-          x: Number(x) + cx,
-          y: Number(y) + cy
-        });
-      }
-    }
-    return newList;
-  }
-
-  redPoints = apply("red");
-  bluePoints = apply("blue");
-
-  updateCounter();
-  draw();
-  updateCoordPanel();
-};
-
-/* ==========================
-   描画
-========================== */
-function draw() {
-  ctx.clearRect(0,0,canvas.width,canvas.height);
-
-  if (bg.complete) ctx.drawImage(bg, 0, 0, canvas.width, canvas.height);
-
-  const aspect = 3567 / 2400;
-  const mapW = canvas.width * 0.9;
-  const mapH = mapW / aspect;
-
-  const mx = (canvas.width - mapW) / 2;
-  const my = (canvas.height - mapH) / 2;
-
-  if (mapBase.complete) ctx.drawImage(mapBase, mx, my, mapW, mapH);
-
-  if (mapMask.complete) {
-    ctx.save();
-    ctx.globalAlpha = 0.5;
-    ctx.drawImage(mapMask, mx, my, mapW, mapH);
-    ctx.restore();
-  }
-
-  /* 点の描画 */
-  for (let i = 0; i < redPoints.length; i++) {
-    const p = redPoints[i];
-    ctx.fillStyle = "red";
-    ctx.beginPath();
-    ctx.arc(p.x, p.y, 10, 0, Math.PI*2);
-    ctx.fill();
-    ctx.fillStyle = "white";
-    ctx.fillText(i+1, p.x-4, p.y+5);
-  }
-
-  for (let i = 0; i < bluePoints.length; i++) {
-    const p = bluePoints[i];
-    ctx.fillStyle = "blue";
-    ctx.beginPath();
-    ctx.arc(p.x, p.y, 10, 0, Math.PI*2);
-    ctx.fill();
-    ctx.fillStyle = "white";
-    ctx.fillText(i+1, p.x-4, p.y+5);
-  }
-
-  const cRed = centroid(redPoints);
-  const cBlue = centroid(bluePoints);
-
-  if (cRed) drawCross(cRed.x, cRed.y, 10, "pink");
-  if (cBlue) drawCross(cBlue.x, cBlue.y, 10, "lightblue");
-
-  /* SP/ST 描画は省略（あなたの元コードのまま） */
-}
-
-/* 補助描画 */
-function drawCross(x, y, size, color) {
+/* =========================
+   描画ユーティリティ
+========================= */
+function drawCircle(cx, cy, r, color) {
+  ctx.save();
   ctx.strokeStyle = color;
   ctx.lineWidth = 2;
   ctx.beginPath();
-  ctx.moveTo(x-size, y-size);
-  ctx.lineTo(x+size, y+size);
-  ctx.moveTo(x+size, y-size);
-  ctx.lineTo(x-size, y+size);
+  ctx.arc(cx, cy, r, 0, Math.PI * 2);
   ctx.stroke();
+  ctx.restore();
 }
 
-function drawCircle(x, y, color) {
+function drawCross(cx, cy, color) {
+  ctx.save();
   ctx.strokeStyle = color;
-  ctx.lineWidth = 4;
+  ctx.lineWidth = 2;
+  const s = 10;
   ctx.beginPath();
-  ctx.arc(x, y, 16, 0, Math.PI*2);
+  ctx.moveTo(cx - s, cy - s);
+  ctx.lineTo(cx + s, cy + s);
+  ctx.moveTo(cx - s, cy + s);
+  ctx.lineTo(cx + s, cy - s);
   ctx.stroke();
+  ctx.restore();
 }
 
-/* ==========================
-   UIイベント
-========================== */
-document.getElementById("modeToggle").onclick = () => {
-  modeCategory = (modeCategory === 1) ? 2 : 1;
+/* =========================
+   重心
+========================= */
+function computeCentroid(arr) {
+  if (!arr.length) return null;
+  let sx = 0, sy = 0;
+  arr.forEach(p => { sx += p.x; sy += p.y; });
+  return { x: sx / arr.length, y: sy / arr.length };
+}
 
-  const btn = document.getElementById("modeToggle");
-  const sub = document.getElementById("subSelect");
+/* =========================
+   背景描画
+========================= */
+function clearCanvas() {
+  ctx.clearRect(0, 0, width, height);
 
-  sub.innerHTML = "";
+  if (bgLoaded) {
+    const scale = Math.min(width / 3567, height / 2400) * 1.5;
+    const w = 3567 * scale;
+    const h = 2400 * scale;
+    const x = (width - w) / 2;
+    const y = (height - h) / 2;
 
-  if (modeCategory === 1) {
-    btn.textContent = "① SP用";
-    sub.appendChild(new Option("攻撃SP", "sp_attack"));
-    sub.appendChild(new Option("バフSP", "sp_buff"));
-    spMode = "sp_attack";
-  } else {
-    btn.textContent = "② ST用";
-    sub.appendChild(new Option("バフ", "st_buffer"));
-    sub.appendChild(new Option("アタッカー", "st_attacker"));
-    sub.appendChild(new Option("ハナコ（水着）", "st_hanako"));
-    stMode = "st_buffer";
+    ctx.save();
+    ctx.globalAlpha = 0.8;
+    ctx.drawImage(bgImage, x, y, w, h);
+    ctx.restore();
   }
 
-  draw();
-};
+  if (bg2Loaded) {
+    const scale = Math.min(width / 3567, height / 2400) * 1.5;
+    const w = 3567 * scale;
+    const h = 2400 * scale;
+    const x = (width - w) / 2;
+    const y = (height - h) / 2;
 
-document.getElementById("subSelect").onchange = (e) => {
-  const v = e.target.value;
-  if (v === "sp_attack" || v === "sp_buff") spMode = v;
-  if (v === "st_buffer" || v === "st_hanako" || v === "st_attacker")
-    stMode = v;
-  draw();
-};
+    ctx.save();
+    ctx.globalAlpha = 0.9;
+    ctx.drawImage(bgImage2, x, y, w, h);
+    ctx.restore();
+  }
+}
 
-document.getElementById("toggleColor").onclick = () => {
-  mode = (mode === "red") ? "blue" : "red";
-  document.getElementById("toggleColor").textContent =
-    `現在：${mode === "red" ? "赤" : "青"} → ${mode === "red" ? "青" : "赤"}に切替`;
-};
+/* =========================
+   点描画
+========================= */
+function drawPoint(p) {
+  const { cx, cy } = logicalToCanvas(p.x, p.y);
+  ctx.save();
+  ctx.beginPath();
+  ctx.fillStyle = p.color === "red" ? COLOR_RED : COLOR_BLUE;
+  ctx.arc(cx, cy, POINT_RADIUS, 0, Math.PI * 2);
+  ctx.fill();
 
-document.getElementById("toggleLine").onclick = () => {
-  showLines = !showLines;
-  draw();
-};
+  ctx.fillStyle = "#fff";
+  ctx.font = "bold 12px system-ui";
+  ctx.textAlign = "center";
+  ctx.textBaseline = "middle";
+  ctx.fillText(p.id, cx, cy);
+  ctx.restore();
+}
 
-document.getElementById("reset").onclick = () => {
+/* =========================
+   距離計算
+========================= */
+function dist2(a, b) {
+  const dx = a.x - b.x;
+  const dy = a.y - b.y;
+  return dx * dx + dy * dy;
+}
+
+function findNearest(from, arr) {
+  if (!arr.length) return null;
+  let best = null;
+  let bestD = Infinity;
+  arr.forEach(p => {
+    const d = dist2(from, p);
+    if (d < bestD) {
+      bestD = d;
+      best = p;
+    }
+  });
+  return best;
+}
+
+function drawHighlightCircle(point, color) {
+  if (!point) return;
+  const { cx, cy } = logicalToCanvas(point.x, point.y);
+
+  ctx.save();
+  ctx.strokeStyle = color;
+  ctx.lineWidth = 3;                 // ★ 線を太く
+  ctx.beginPath();
+  ctx.arc(cx, cy, POINT_RADIUS + 5, 0, Math.PI * 2);  // ★ 半径を短めに
+  ctx.stroke();
+  ctx.restore();
+}
+
+function drawCentroidMark(arr, colorLight) {
+  const c = computeCentroid(arr);
+  if (!c) return;
+  const { cx, cy } = logicalToCanvas(c.x, c.y);
+  drawCross(cx, cy, colorLight);
+}
+
+/* =========================
+   範囲攻撃
+========================= */
+function getSectorDirection(base, color) {
+  const others = color === "red" ? bluePoints : redPoints;
+
+  if (others.length === 0) {
+    return (base.x <= 0) ? 0 : Math.PI;
+  }
+
+  let nearest = null;
+  let bestDist = Infinity;
+
+  others.forEach(p => {
+    const dx = p.x - base.x;
+    const dy = p.y - base.y;
+    const d2 = dx * dx + dy * dy;
+    if (d2 < bestDist) {
+      bestDist = d2;
+      nearest = p;
+    }
+  });
+
+  return Math.atan2(-(nearest.y - base.y), nearest.x - base.x);
+}
+
+function drawRangeAttack() {
+  if (!basePoint) return;
+
+  const arr = basePoint.color === "red" ? redPoints : bluePoints;
+  const self = arr.find(p => p.id === basePoint.id);
+  if (!self) return;
+
+  const scale = 290 / 700;
+  const radiusRaw = parseFloat(radiusSlider.value);
+  const radius = radiusRaw * scale;
+
+  const angleDeg = parseFloat(angleInput.value);
+  const angleRad = angleDeg * Math.PI / 180;
+
+  const { cx, cy } = logicalToCanvas(self.x, self.y);
+  const color = basePoint.color === "red" ? COLOR_RED_LIGHT : COLOR_BLUE_LIGHT;
+
+  ctx.save();
+  ctx.fillStyle = color;
+
+  if (angleDeg >= 360) {
+    ctx.beginPath();
+    ctx.arc(cx, cy, radius, 0, Math.PI * 2);
+    ctx.fill();
+  } else {
+    const centerAngle = getSectorDirection(self, basePoint.color);
+    const start = centerAngle - angleRad / 2;
+    const end = centerAngle + angleRad / 2;
+
+    ctx.beginPath();
+    ctx.moveTo(cx, cy);
+    ctx.arc(cx, cy, radius, start, end);
+    ctx.closePath();
+    ctx.fill();
+  }
+
+  ctx.restore();
+}
+
+/* =========================
+   サブ機能
+========================= */
+function applyAttackSP() {
+  const redC = computeCentroid(redPoints);
+  const blueC = computeCentroid(bluePoints);
+
+  if (redC && bluePoints.length) {
+    const nearestBlue = findNearest(redC, bluePoints);
+    drawHighlightCircle(nearestBlue, COLOR_RED_LIGHT);
+  }
+
+  if (blueC && redPoints.length) {
+    const nearestRed = findNearest(blueC, redPoints);
+    drawHighlightCircle(nearestRed, COLOR_BLUE_LIGHT);
+  }
+}
+
+function applyBuffSP() {
+  const redC = computeCentroid(redPoints);
+  const blueC = computeCentroid(bluePoints);
+
+  if (redC && redPoints.length >= 2) {
+    const nearestRed = findNearest(redC, redPoints);
+    drawHighlightCircle(nearestRed, COLOR_RED_LIGHT);
+  }
+
+  if (blueC && bluePoints.length >= 2) {
+    const nearestBlue = findNearest(blueC, bluePoints);
+    drawHighlightCircle(nearestBlue, COLOR_BLUE_LIGHT);
+  }
+}
+
+function applyAttackST() {
+  if (!basePoint) return;
+
+  const arrSelf = basePoint.color === "red" ? redPoints : bluePoints;
+  const arrOther = basePoint.color === "red" ? bluePoints : redPoints;
+
+  const self = arrSelf.find(p => p.id === basePoint.id);
+  if (!self || !arrOther.length) return;
+
+  const nearest = findNearest(self, arrOther);
+  const color = basePoint.color === "red" ? COLOR_RED_LIGHT : COLOR_BLUE_LIGHT;
+
+  drawHighlightCircle(nearest, color);
+}
+
+function applyBuffST() {
+  if (!basePoint) return;
+
+  const arrSelf = basePoint.color === "red" ? redPoints : bluePoints;
+  const self = arrSelf.find(p => p.id === basePoint.id);
+  if (!self || arrSelf.length < 2) return;
+
+  const others = arrSelf.filter(p => p.id !== basePoint.id);
+  const nearest = findNearest(self, others);
+
+  const color = basePoint.color === "red" ? COLOR_RED_LIGHT : COLOR_BLUE_LIGHT;
+  drawHighlightCircle(nearest, color);
+}
+
+function applySubFunction() {
+  drawCentroidMark(redPoints, COLOR_RED_LIGHT);
+  drawCentroidMark(bluePoints, COLOR_BLUE_LIGHT);
+
+  if (modeIndex === 0) applyAttackSP();
+  if (modeIndex === 1) applyBuffSP();
+  if (modeIndex === 2) applyAttackST();
+  if (modeIndex === 3) applyBuffST();
+  if (modeIndex === 4) drawRangeAttack();
+}
+
+/* =========================
+   再描画
+========================= */
+function redraw() {
+  clearCanvas();
+  redPoints.forEach(drawPoint);
+  bluePoints.forEach(drawPoint);
+  applySubFunction();
+}
+
+/* =========================
+   ダブルクリックで基準点選択
+========================= */
+canvas.addEventListener("dblclick", e => {
+  const rect = canvas.getBoundingClientRect();
+  const cx = e.clientX - rect.left;
+  const cy = e.clientY - rect.top;
+
+  const hit = findPointAtCanvasPos(cx, cy);
+  if (!hit) return;
+
+  basePoint = { color: hit.color, id: hit.id };
+
+  const selector = `input[type=radio][data-color="${hit.color}"][data-id="${hit.id}"]`;
+  const radio = document.querySelector(selector);
+  if (radio) radio.checked = true;
+
+  redraw();
+});
+
+/* =========================
+   クリック（追加・ドラッグ）
+========================= */
+canvas.addEventListener("contextmenu", e => e.preventDefault());
+
+canvas.addEventListener("mousedown", e => {
+  const rect = canvas.getBoundingClientRect();
+  const cx = e.clientX - rect.left;
+  const cy = e.clientY - rect.top;
+
+  const hit = findPointAtCanvasPos(cx, cy);
+
+  if (e.button === 0) {
+
+    if (hit) {
+      const logical = canvasToLogical(cx, cy);
+      dragOffsetX = hit.x - logical.x;
+      dragOffsetY = hit.y - logical.y;
+      draggingPoint = hit;
+      isDragging = true;
+      return;
+    }
+
+    const logical = canvasToLogical(cx, cy);
+    addPoint(currentColor, logical.x, logical.y);
+    redraw();
+    updateTablesFromPoints();
+    updateCounts();
+  }
+
+  if (e.button === 2 && hit) {
+    removePoint(hit);
+    redraw();
+    updateTablesFromPoints();
+    updateCounts();
+  }
+});
+
+canvas.addEventListener("mousemove", e => {
+  if (!isDragging || !draggingPoint) return;
+
+  const rect = canvas.getBoundingClientRect();
+  const cx = e.clientX - rect.left;
+  const cy = e.clientY - rect.top;
+
+  const logical = canvasToLogical(cx, cy);
+  draggingPoint.x = logical.x + dragOffsetX;
+  draggingPoint.y = logical.y + dragOffsetY;
+
+  redraw();
+  updateTablesFromPoints();
+});
+
+canvas.addEventListener("mouseup", () => {
+  isDragging = false;
+  draggingPoint = null;
+});
+
+canvas.addEventListener("mouseleave", () => {
+  isDragging = false;
+  draggingPoint = null;
+});
+
+/* =========================
+   ボタン
+========================= */
+btnColor.addEventListener("click", () => {
+  if (currentColor === "red") {
+    currentColor = "blue";
+    btnColor.textContent = "現在：青 → 赤に切り替え";
+  } else {
+    currentColor = "red";
+    btnColor.textContent = "現在：赤 → 青に切り替え";
+  }
+});
+
+btnReset.addEventListener("click", () => {
   redPoints = [];
   bluePoints = [];
-  selectedPoint = null;
-  updateCounter();
-  draw();
-  updateCoordPanel();
-};
+  basePoint = null;
+  redraw();
+  updateTablesFromPoints();
+  updateCounts();
+});
 
-document.getElementById("saveImage").onclick = () => {
+btnSave.addEventListener("click", () => {
+
+  // 赤点（存在しない場合は 0,0）
+  const redArr = [1,2,3,4].flatMap(id => {
+    const p = redPoints.find(pt => pt.id === id);
+    const x = p ? Math.round(p.x) : 0;
+    const y = p ? Math.round(p.y) : 0;
+    return [x, y];
+  });
+
+  // 青点（存在しない場合は 0,0）
+  const blueArr = [1,2,3,4].flatMap(id => {
+    const p = bluePoints.find(pt => pt.id === id);
+    const x = p ? Math.round(p.x) : 0;
+    const y = p ? Math.round(p.y) : 0;
+    return [x, y];
+  });
+
+  // ファイル名生成（短縮版）
+  const fileName =
+    `Shittim_no_hako_R_${redArr.join("_")}_B_${blueArr.join("_")}.png`;
+
+  // 保存処理
   const link = document.createElement("a");
-  link.download = "tactics.png";
+  link.download = fileName;
   link.href = canvas.toDataURL("image/png");
   link.click();
-};
+});
 
-bg.onload = () => {
-  draw();
-  updateCoordPanel();
-};
+/* =========================
+   サブ機能切り替え
+========================= */
+modeSelect.addEventListener("change", () => {
+  modeIndex = parseInt(modeSelect.value, 10);
+
+  if (modeIndex === 4) {
+    rangeControls.style.display = "block";
+  } else {
+    rangeControls.style.display = "none";
+  }
+
+  redraw();
+});
+
+/* =========================
+   範囲攻撃 UI
+========================= */
+radiusSlider.addEventListener("input", () => {
+  radiusValue.textContent = radiusSlider.value;
+  shortcutSelect.value = "manual";
+  redraw();
+});
+
+angleInput.addEventListener("input", () => {
+  shortcutSelect.value = "manual";
+  redraw();
+});
+
+shortcutSelect.addEventListener("change", () => {
+  const v = shortcutSelect.value;
+
+  if (v === "tsubaki") {
+    radiusSlider.value = 700;
+    angleInput.value = 360;
+  }
+  if (v === "hanako") {
+    radiusSlider.value = 850;
+    angleInput.value = 60;
+  }
+  if (v === "hoshinoEX") {
+    radiusSlider.value = 300;
+    angleInput.value = 360;
+  }
+  if (v === "hoshinoSS") {
+    radiusSlider.value = 850;
+    angleInput.value = 30;
+  }
+  if (v === "yakumo") {
+    radiusSlider.value = 510;
+    angleInput.value = 360;
+  }
+
+  radiusValue.textContent = radiusSlider.value;
+  redraw();
+});
+
+/* =========================
+   カウント表示
+========================= */
+function updateCounts() {
+  countsDisplay.textContent =
+    `赤点：${redPoints.length}/${MAX_POINTS}　青点：${bluePoints.length}/${MAX_POINTS}`;
+}
+
+/* =========================
+   初期化
+========================= */
+initTables();
+redraw();
+updateTablesFromPoints();
+updateCounts();
+
 </script>
-
 </body>
 </html>
