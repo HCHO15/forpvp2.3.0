@@ -89,8 +89,6 @@
 
 <body>
   <h1>シッテムの箱</h1>
-
-
   
   <div class="container">
     <div class="left-panel">
@@ -161,6 +159,49 @@
         <tbody id="blueTableBody"></tbody>
       </table>
 
+      <!-- ▼▼▼ プリセット保存枠 ▼▼▼ -->
+<div id="presetContainer" style="margin-top: 12px;">
+
+  <!-- 3つのプリセットを生成 -->
+  <div class="preset-block" data-id="1" style="border:1px solid #ccc; padding:8px; margin-bottom:8px; border-radius:4px;">
+    <input type="text" class="preset-name" value="プリセット1" style="width:100%; margin-bottom:6px;">
+    <button class="preset-save">現在の配置を保存</button>
+    <button class="preset-apply">適用</button>
+    <button class="preset-delete">削除</button>
+
+    <details style="margin-top:6px;">
+      <summary style="cursor:pointer;">座標内容 ▽</summary>
+      <pre class="preset-data" style="background:#fafafa; padding:6px; border:1px solid #ddd; border-radius:4px;"></pre>
+    </details>
+  </div>
+
+  <div class="preset-block" data-id="2" style="border:1px solid #ccc; padding:8px; margin-bottom:8px; border-radius:4px;">
+    <input type="text" class="preset-name" value="プリセット2" style="width:100%; margin-bottom:6px;">
+    <button class="preset-save">現在の配置を保存</button>
+    <button class="preset-apply">適用</button>
+    <button class="preset-delete">削除</button>
+
+    <details style="margin-top:6px;">
+      <summary style="cursor:pointer;">座標内容 ▽</summary>
+      <pre class="preset-data" style="background:#fafafa; padding:6px; border:1px solid #ddd; border-radius:4px;"></pre>
+    </details>
+  </div>
+
+  <div class="preset-block" data-id="3" style="border:1px solid #ccc; padding:8px; margin-bottom:8px; border-radius:4px;">
+    <input type="text" class="preset-name" value="プリセット3" style="width:100%; margin-bottom:6px;">
+    <button class="preset-save">現在の配置を保存</button>
+    <button class="preset-apply">適用</button>
+    <button class="preset-delete">削除</button>
+
+    <details style="margin-top:6px;">
+      <summary style="cursor:pointer;">座標内容 ▽</summary>
+      <pre class="preset-data" style="background:#fafafa; padding:6px; border:1px solid #ddd; border-radius:4px;"></pre>
+    </details>
+  </div>
+
+</div>
+<!-- ▲▲▲ プリセット保存枠 ▲▲▲ -->
+      
       <!-- ▼▼▼ ツール説明（折りたたみ） ▼▼▼ -->
 <div style="margin-bottom: 12px;">
   <details>
@@ -874,6 +915,112 @@ function updateCounts() {
     `赤点：${redPoints.length}/${MAX_POINTS}　青点：${bluePoints.length}/${MAX_POINTS}`;
 }
 
+
+/* =========================
+   プリセット保存機能
+========================= */
+
+function getCurrentCoordinates() {
+  return {
+    red: [1,2,3,4].map(id => {
+      const p = redPoints.find(pt => pt.id === id);
+      return p ? { x: Math.round(p.x), y: Math.round(p.y) } : { x: 0, y: 0 };
+    }),
+    blue: [1,2,3,4].map(id => {
+      const p = bluePoints.find(pt => pt.id === id);
+      return p ? { x: Math.round(p.x), y: Math.round(p.y) } : { x: 0, y: 0 };
+    })
+  };
+}
+
+function applyPresetData(data) {
+  redPoints = [];
+  bluePoints = [];
+
+  data.red.forEach((p, i) => {
+    if (p.x !== 0 || p.y !== 0)
+      redPoints.push({ id: i+1, color: "red", x: p.x, y: p.y });
+  });
+
+  data.blue.forEach((p, i) => {
+    if (p.x !== 0 || p.y !== 0)
+      bluePoints.push({ id: i+1, color: "blue", x: p.x, y: p.y });
+  });
+
+  basePoint = null;
+  redraw();
+  updateTablesFromPoints();
+  updateCounts();
+}
+
+function loadPresets() {
+  document.querySelectorAll(".preset-block").forEach(block => {
+    const id = block.dataset.id;
+    const nameInput = block.querySelector(".preset-name");
+    const dataPre = block.querySelector(".preset-data");
+
+    const saved = localStorage.getItem("preset_" + id);
+    if (saved) {
+      const obj = JSON.parse(saved);
+      nameInput.value = obj.name;
+      dataPre.textContent = JSON.stringify(obj.data, null, 2);
+    }
+  });
+}
+
+function savePreset(id, name, data) {
+  localStorage.setItem("preset_" + id, JSON.stringify({ name, data }));
+}
+
+document.querySelectorAll(".preset-save").forEach(btn => {
+  btn.addEventListener("click", e => {
+    const block = e.target.closest(".preset-block");
+    const id = block.dataset.id;
+    const name = block.querySelector(".preset-name").value;
+
+    const data = getCurrentCoordinates();
+    savePreset(id, name, data);
+
+    block.querySelector(".preset-data").textContent =
+      JSON.stringify(data, null, 2);
+
+    alert("プリセット " + name + " を保存しました");
+  });
+});
+
+document.querySelectorAll(".preset-apply").forEach(btn => {
+  btn.addEventListener("click", e => {
+    const block = e.target.closest(".preset-block");
+    const id = block.dataset.id;
+
+    const saved = localStorage.getItem("preset_" + id);
+    if (!saved) {
+      alert("プリセットが保存されていません");
+      return;
+    }
+
+    const obj = JSON.parse(saved);
+    applyPresetData(obj.data);
+  });
+});
+
+document.querySelectorAll(".preset-delete").forEach(btn => {
+  btn.addEventListener("click", e => {
+    if (!confirm("本当に削除しますか？")) return;
+
+    const block = e.target.closest(".preset-block");
+    const id = block.dataset.id;
+
+    localStorage.removeItem("preset_" + id);
+    block.querySelector(".preset-data").textContent = "";
+
+    alert("削除しました");
+  });
+});
+
+// 初期ロード
+loadPresets();
+  
 /* =========================
    初期化
 ========================= */
