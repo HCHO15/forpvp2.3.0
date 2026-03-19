@@ -75,7 +75,6 @@
       background: #f0f0f0;
     }
 
-    /* 範囲確認 UI */
     #rangeControls {
       display: none;
       margin-top: 6px;
@@ -93,7 +92,6 @@
   <div class="container">
     <div class="left-panel">
 
-      <!-- ボタン -->
       <div class="controls">
         <button id="btnColor">現在：赤 → 青に切り替え</button>
         <button id="btnReset">リセット</button>
@@ -108,7 +106,6 @@
         </select>
       </div>
 
-      <!-- 範囲確認 UI -->
       <div id="rangeControls">
         <div>
           半径(m)：
@@ -156,7 +153,6 @@
 
     </div>
 
-    <!-- 座標表 -->
     <div class="right-panel">
       <div class="table-title">赤点座標</div>
       <table>
@@ -176,7 +172,7 @@
     </div>
   </div>
 
-
+<!-- ▼▼▼ ここから JavaScript（Part 2 を続けて貼る） ▼▼▼ -->
 <script>
 /* =========================
    基本設定
@@ -370,26 +366,50 @@ function findPointAtCanvasPos(cx, cy) {
 /* =========================
    描画ユーティリティ
 ========================= */
-function drawCircle(cx, cy, r, color) {
+function clearCanvas() {
+  ctx.clearRect(0, 0, width, height);
+
+  if (bgLoaded) ctx.drawImage(bgImage, 0, 0, width, height);
+  if (bg2Loaded) ctx.drawImage(bgImage2, 0, 0, width, height);
+}
+
+function drawPoint(p) {
+  const { cx, cy } = logicalToCanvas(p.x, p.y);
+
+  ctx.save();
+  ctx.fillStyle = p.color === "red" ? COLOR_RED : COLOR_BLUE;
+  ctx.beginPath();
+  ctx.arc(cx, cy, POINT_RADIUS, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.restore();
+}
+
+function drawHighlightCircle(p, color) {
+  if (!p) return;
+  const { cx, cy } = logicalToCanvas(p.x, p.y);
+
   ctx.save();
   ctx.strokeStyle = color;
-  ctx.lineWidth = 2;
+  ctx.lineWidth = 4;
   ctx.beginPath();
-  ctx.arc(cx, cy, r, 0, Math.PI * 2);
+  ctx.arc(cx, cy, POINT_RADIUS + 6, 0, Math.PI * 2);
   ctx.stroke();
   ctx.restore();
 }
 
-function drawCross(cx, cy, color) {
+function drawCentroidMark(arr, color) {
+  if (!arr.length) return;
+  const c = computeCentroid(arr);
+  const { cx, cy } = logicalToCanvas(c.x, c.y);
+
   ctx.save();
   ctx.strokeStyle = color;
   ctx.lineWidth = 2;
-  const s = 10;
   ctx.beginPath();
-  ctx.moveTo(cx - s, cy - s);
-  ctx.lineTo(cx + s, cy + s);
-  ctx.moveTo(cx - s, cy + s);
-  ctx.lineTo(cx + s, cy - s);
+  ctx.moveTo(cx - 8, cy);
+  ctx.lineTo(cx + 8, cy);
+  ctx.moveTo(cx, cy - 8);
+  ctx.lineTo(cx, cy + 8);
   ctx.stroke();
   ctx.restore();
 }
@@ -430,14 +450,11 @@ function findNearest(from, arr) {
 /* =========================
    扇の中心候補
 ========================= */
-
-// 基準点に最も近い異色点
 function getNearestOppositePoint(fromPoint) {
   const others = fromPoint.color === "red" ? bluePoints : redPoints;
   return findNearest(fromPoint, others);
 }
 
-// 基準点と同色の重心 → 異色点の中で最も近い点
 function getNearestOppositeFromSameColorCentroid(basePoint) {
   const sameArr = basePoint.color === "red" ? redPoints : bluePoints;
   const centroid = computeCentroid(sameArr);
@@ -446,7 +463,6 @@ function getNearestOppositeFromSameColorCentroid(basePoint) {
   const others = basePoint.color === "red" ? bluePoints : redPoints;
   return findNearest(centroid, others);
 }
-
 /* =========================
    扇の向き（中心点から最も近い敵方向）
 ========================= */
@@ -475,7 +491,6 @@ function drawRangeAttack() {
 
   const v = shortcutSelect.value;
 
-  /* ショートカット設定 */
   const preset = {
     yuzuEX:        [200, 360, "nearestOpp"],
     yuzuNS:        [100, 360, "self"],
@@ -499,7 +514,6 @@ function drawRangeAttack() {
     yakumo:        [510, 360, "centroidOpp"]
   };
 
-  /* ショートカット適用 */
   if (preset[v]) {
     radiusRaw = preset[v][0];
     angleDeg = preset[v][1];
@@ -507,7 +521,6 @@ function drawRangeAttack() {
 
   const centerRule = preset[v] ? preset[v][2] : "self";
 
-  /* 中心点の決定 */
   let centerPoint = self;
 
   if (centerRule === "nearestOpp") {
@@ -520,7 +533,6 @@ function drawRangeAttack() {
     if (p) centerPoint = p;
   }
 
-  /* 描画 */
   const scale = 290 / 700;
   const radius = radiusRaw * scale;
   const angleRad = angleDeg * Math.PI / 180;
