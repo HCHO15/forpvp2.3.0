@@ -75,7 +75,7 @@
       background: #f0f0f0;
     }
 
-    /* 範囲攻撃 UI */
+    /* 範囲確認 UI */
     #rangeControls {
       display: none;
       margin-top: 6px;
@@ -104,15 +104,15 @@
           <option value="1">バフSP</option>
           <option value="2">攻撃ST</option>
           <option value="3">バフST</option>
-          <option value="4">範囲攻撃</option>
+          <option value="4">範囲確認</option>
         </select>
       </div>
 
-      <!-- 範囲攻撃 UI -->
+      <!-- 範囲確認 UI -->
       <div id="rangeControls">
         <div>
           半径(m)：
-          <input type="range" id="radiusSlider" min="50" max="1000" step="10" value="700">
+          <input type="range" id="radiusSlider" min="50" max="1200" step="10" value="700">
           <span id="radiusValue">700</span>
 
           <select id="shortcutSelect">
@@ -247,7 +247,7 @@
         <li><strong>バフSP：</strong> SPバッファーのターゲット を強調します</li>
         <li><strong>攻撃ST：</strong> 基準点に選択したSTの攻撃ターゲット を強調します</li>
         <li><strong>バフST：</strong> 基準点に選択したSTのバフターゲット を強調します</li>
-        <li><strong>範囲攻撃：</strong> 基準点を中心に円/扇形を描画します（半径・角度調整可）</li>
+        <li><strong>範囲確認：</strong> 基準点を中心に円/扇形を描画します（半径・角度調整可）</li>
       </ul>
 
       <h4>■ その他</h4>
@@ -593,7 +593,7 @@ function drawCentroidMark(arr, colorLight) {
 }
 
 /* =========================
-   範囲攻撃
+   範囲確認
 ========================= */
 function getSectorDirection(base, color) {
   const others = color === "red" ? bluePoints : redPoints;
@@ -890,7 +890,7 @@ modeSelect.addEventListener("change", () => {
 });
 
 /* =========================
-   範囲攻撃 UI
+   範囲確認 UI
 ========================= */
 radiusSlider.addEventListener("input", () => {
   radiusValue.textContent = radiusSlider.value;
