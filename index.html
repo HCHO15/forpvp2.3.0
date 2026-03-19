@@ -592,6 +592,28 @@ function drawCentroidMark(arr, colorLight) {
   drawCross(cx, cy, colorLight);
 }
 
+const rangePresets = {
+  yuzuEX:        { radius: 200, angle: 360, center: "nearestOpp" },
+  yuzuNS:        { radius: 100, angle: 360, center: "self" },
+  atsukoEX:      { radius: 500, angle: 360, center: "self" },
+  atsukoNS:      { radius: 150, angle: 360, center: "self" },
+  koharuMizugiEX:{ radius: 200, angle: 360, center: "nearestOpp" },
+  sakiEX:        { radius: 100, angle: 360, center: "nearestOpp" },
+  sumireEX:      { radius: 400, angle: 45,  center: "self" },
+  cherinoEX:     { radius: 1000,angle: 360, center: "self" },
+  nagisaEX:      { radius: 250, angle: 360, center: "centroidOpp" },
+  nonomiEX:      { radius: 950, angle: 60,  center: "nearestOpp" },
+  hinaMizugi:    { radius: 950, angle: 90,  center: "self" },
+  minoriEX:      { radius: 300, angle: 360, center: "centroidOpp" },
+  minoriNS:      { radius: 300, angle: 360, center: "centroidOpp" },
+  reisaEX:       { radius: 700, angle: 90,  center: "self" },
+  tsubaki:       { radius: 700, angle: 360, center: "self" },
+  hanako:        { radius: 850, angle: 60,  center: "self" },
+  hoshinoEX:     { radius: 300, angle: 360, center: "self" },
+  hoshinoSS:     { radius: 850, angle: 30,  center: "self" },
+  yakumo:        { radius: 510, angle: 360, center: "centroidOpp" }
+};
+
 /* =========================
    範囲確認
 ========================= */
@@ -632,6 +654,23 @@ function drawRangeAttack() {
   const angleDeg = parseFloat(angleInput.value);
   const angleRad = angleDeg * Math.PI / 180;
 
+/* ▼▼▼ ここから追加：中心点の切り替え ▼▼▼ */
+  let centerPoint = self;
+
+  if (preset.center === "nearestOpp") {
+      const p = getNearestOppositePoint(self);
+      if (p) centerPoint = p;
+  }
+
+  if (preset.center === "centroidOpp") {
+      const p = getNearestOppositeFromSameColorCentroid(self);
+      if (p) centerPoint = p;
+  }
+/* ▲▲▲ ここまで追加 ▲▲▲ */
+
+
+
+  
   const { cx, cy } = logicalToCanvas(self.x, self.y);
   const color = basePoint.color === "red" ? COLOR_RED_LIGHT : COLOR_BLUE_LIGHT;
 
