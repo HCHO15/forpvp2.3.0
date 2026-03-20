@@ -141,6 +141,7 @@
             <option value="hiyoriMizugiEX">ヒヨリ（水着）EX</option>
             <option value="hoshinoRinsenEX">ホシノ（臨戦）EX</option>
             <option value="hoshinoRinsenSS">ホシノ（臨戦）SS</option>
+            <option value="marinaEX">マリナEX</option>
             <option value="minoriEX">ミノリEX</option>
             <option value="minoriNS">ミノリNS</option>
             <option value="mutsukiNewyearEX">ムツキ（正月）EX</option>
@@ -663,6 +664,7 @@ const rangePresets = {
   hiyoriMizugiEX:{ shape: "rectFromSelf", width: 1000, height: 50,  center: "nearestOpp" },
   sayaCasualEX:  { shape: "rectCentroidOpp", width: 200, height: 800, center: "centroidOpp" },
   ioriEX:　　　　 { shape: "ioriEX", center: "nearestOpp" },
+  marinaEX: { shape: "marinaEX", center: "nearestOpp" },
   mutsukiNewyearEX: { shape: "ringSector", outer: 1100, inner: 550, angle: 90, center: "self" }
 };
 
@@ -742,10 +744,14 @@ function drawRangeAttack() {
       drawRectFromSelf(centerPoint, preset, scale);
       break;
 
+    case "marinaEX":
+　　  drawMarinaEX(centerPoint, preset, scale);
+  　　break;
+
     case "ioriEX":
   　　drawIoriEX(centerPoint, preset, scale);
   　　break;
-
+      
     default:
       // shape が未定義なら sector と同じ扱い
       drawSector(centerPoint, preset, scale);
@@ -855,6 +861,58 @@ function drawRectCentroidOpp(centerPoint, preset, scale) {
   ctx.restore();
 }
 
+
+function drawMarinaEX(centerPoint, preset, scale) {
+  // 固定値
+  const outer = 1000 * scale;
+  const inner = 500 * scale;
+  const angleDeg = 50;
+  const angleRad = angleDeg * Math.PI / 180;
+
+  // 基準点
+  const arr = basePoint.color === "red" ? redPoints : bluePoints;
+  const self = arr.find(p => p.id === basePoint.id);
+  if (!self) return;
+
+  // 最短異色点
+  const target = getNearestOppositePoint(self);
+  if (!target) return;
+
+  // self → target の角度
+  const baseAngle = Math.atan2(-(target.y - self.y), target.x - self.x);
+
+  // 反対方向に 550 進む
+  const oppositeAngle = baseAngle + Math.PI; // 180°反転
+  const offset = 550; // 論理座標での距離
+
+  const centerX = self.x + Math.cos(oppositeAngle) * offset;
+  const centerY = self.y - Math.sin(oppositeAngle) * offset;
+
+  const { cx, cy } = logicalToCanvas(centerX, centerY);
+
+  // 扇形の開始・終了角度
+  const start = baseAngle - angleRad / 2;
+  const end   = baseAngle + angleRad / 2;
+
+  const color = basePoint.color === "red" ? COLOR_RED_LIGHT : COLOR_BLUE_LIGHT;
+
+  ctx.save();
+  ctx.fillStyle = color;
+
+  ctx.beginPath();
+
+  // 外側扇形
+  ctx.arc(cx, cy, outer, start, end, false);
+
+  // 内側扇形（逆方向）
+  ctx.arc(cx, cy, inner, end, start, true);
+
+  ctx.closePath();
+  ctx.fill();
+
+  ctx.restore();
+}
+  
 function drawIoriEX(centerPoint, preset, scale) {
   // 固定値
   const radius = 250 * scale;
