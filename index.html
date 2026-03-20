@@ -647,9 +647,11 @@ function drawRangeAttack() {
   const self = arr.find(p => p.id === basePoint.id);
   if (!self) return;
 
+  // ▼ ショートカットのプリセット取得
   const key = shortcutSelect.value;
   const preset = rangePresets[key] || { center: "self" };
-  
+
+  // ▼ 半径・角度の取得（UI の値をそのまま使用）
   const scale = 290 / 700;
   const radiusRaw = parseFloat(radiusSlider.value);
   const radius = radiusRaw * scale;
@@ -657,30 +659,35 @@ function drawRangeAttack() {
   const angleDeg = parseFloat(angleInput.value);
   const angleRad = angleDeg * Math.PI / 180;
 
+  // ▼ 中心点の決定（self / nearestOpp / centroidOpp）
   let centerPoint = self;
 
   if (preset.center === "nearestOpp") {
     const p = getNearestOppositePoint(self);
     if (p) centerPoint = p;
-}
+  }
 
   if (preset.center === "centroidOpp") {
     const p = getNearestOppositeFromSameColorCentroid(self);
     if (p) centerPoint = p;
-}
-  
+  }
+
+  // ▼ 中心点の座標を使用
   const { cx, cy } = logicalToCanvas(centerPoint.x, centerPoint.y);
   const color = basePoint.color === "red" ? COLOR_RED_LIGHT : COLOR_BLUE_LIGHT;
 
   ctx.save();
   ctx.fillStyle = color;
 
+  // ▼ 円形（角度360）
   if (angleDeg >= 360) {
     ctx.beginPath();
     ctx.arc(cx, cy, radius, 0, Math.PI * 2);
     ctx.fill();
-  } else {
-    const centerAngle = getSectorDirection(self, basePoint.color);
+  } 
+  // ▼ 扇形
+  else {
+    const centerAngle = getSectorDirection(centerPoint, basePoint.color);
     const start = centerAngle - angleRad / 2;
     const end = centerAngle + angleRad / 2;
 
