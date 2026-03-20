@@ -437,64 +437,6 @@ function updateTablesFromPoints() {
 }
 
 /* =========================
-   試験的：五つの円を描画する機能@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
-========================= */
-function drawFiveCirclePattern() {
-
-  const scale = 290 / 700; // 既存の縮尺に合わせる
-  const R = 150 * scale;   // 円の半径
-  const L = 200;           // A→B, A→C, A→D, A→E の距離（論理座標のまま）
-
-  // A = (0,0)
-  const Ax = 0;
-  const Ay = 0;
-
-  // B = (200, 0)
-  const Bx = L;
-  const By = 0;
-
-  // C = (-200, 0)
-  const Cx = -L;
-  const Cy = 0;
-
-  // D = 200 * (cos50°, sin50°)
-  const rad50 = 50 * Math.PI / 180;
-  const Dx = L * Math.cos(rad50);
-  const Dy = L * Math.sin(rad50);
-
-  // E = 200 * (cos130°, sin130°)
-  const rad130 = 130 * Math.PI / 180;
-  const Ex = L * Math.cos(rad130);
-  const Ey = L * Math.sin(rad130);
-
-  // 描画用のヘルパー
-  function drawCircleAt(x, y) {
-    const { cx, cy } = logicalToCanvas(x, y);
-    ctx.beginPath();
-    ctx.arc(cx, cy, R, 0, Math.PI * 2);
-    ctx.fillStyle = "rgba(255, 200, 0, 0.35)"; // 目立つ色（必要なら変更）
-    ctx.fill();
-  }
-
-  // 円A〜Eを描画
-  drawCircleAt(Ax, Ay);
-  drawCircleAt(Bx, By);
-  drawCircleAt(Cx, Cy);
-  drawCircleAt(Dx, Dy);
-  drawCircleAt(Ex, Ey);
-}
-
-function redraw() {
-  clearCanvas();
-  redPoints.forEach(drawPoint);
-  bluePoints.forEach(drawPoint);
-  applySubFunction();
-
-  // ★ 試験的描画（必要なときだけ ON）
-  drawFiveCirclePattern();
-  
-}
-/* =========================
    点操作
 ========================= */
 function getNextId(arr) {
@@ -1424,6 +1366,66 @@ redraw();
 updateTablesFromPoints();
 updateCounts();
 
+
+/* =========================
+   試験的：五つの円を描画する機能@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+========================= */
+function drawFiveCirclePattern() {
+
+  const scale = 290 / 700; // 既存の縮尺に合わせる
+  const R = 150 * scale;   // 円の半径
+  const L = 200;           // A→B, A→C, A→D, A→E の距離（論理座標のまま）
+
+  // A = (0,0)
+  const Ax = 0;
+  const Ay = 0;
+
+  // B = (200, 0)
+  const Bx = L;
+  const By = 0;
+
+  // C = (-200, 0)
+  const Cx = -L;
+  const Cy = 0;
+
+  // D = 200 * (cos50°, sin50°)
+  const rad50 = 50 * Math.PI / 180;
+  const Dx = L * Math.cos(rad50);
+  const Dy = L * Math.sin(rad50);
+
+  // E = 200 * (cos130°, sin130°)
+  const rad130 = 130 * Math.PI / 180;
+  const Ex = L * Math.cos(rad130);
+  const Ey = L * Math.sin(rad130);
+
+  // 描画用のヘルパー
+  function drawCircleAt(x, y) {
+    const { cx, cy } = logicalToCanvas(x, y);
+    ctx.beginPath();
+    ctx.arc(cx, cy, R, 0, Math.PI * 2);
+    ctx.fillStyle = "rgba(255, 200, 0, 0.35)"; // 目立つ色（必要なら変更）
+    ctx.fill();
+  }
+
+  // 円A〜Eを描画
+  drawCircleAt(Ax, Ay);
+  drawCircleAt(Bx, By);
+  drawCircleAt(Cx, Cy);
+  drawCircleAt(Dx, Dy);
+  drawCircleAt(Ex, Ey);
+}
+
+function redraw() {
+  clearCanvas();
+  redPoints.forEach(drawPoint);
+  bluePoints.forEach(drawPoint);
+  applySubFunction();
+
+  // ★ 試験的描画（必要なときだけ ON）
+  drawFiveCirclePattern();
+  
+}
+  
 </script>
 </body>
 </html>
