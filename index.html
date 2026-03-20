@@ -1116,13 +1116,21 @@ angleInput.addEventListener("input", () => {
 
 shortcutSelect.addEventListener("change", () => {
   const key = shortcutSelect.value;
+  const preset = rangePresets[key];
 
-  if (key !== "manual" && rangePresets[key]) {
-    radiusSlider.value = rangePresets[key].radius;
-    angleInput.value = rangePresets[key].angle;
+  // 手動 or プリセットなし → 何もしない
+  if (key === "manual" || !preset) {
+    redraw();
+    return;
   }
 
-  radiusValue.textContent = radiusSlider.value;
+  // 扇形だけ radius/angle を UI に反映
+  if (preset.shape === "sector") {
+    radiusSlider.value = preset.radius;
+    angleInput.value = preset.angle;
+    radiusValue.textContent = preset.radius;
+  }
+
   redraw();
 });
 
