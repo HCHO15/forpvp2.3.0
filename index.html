@@ -604,6 +604,31 @@ function drawCentroidMark(arr, colorLight) {
   drawCross(cx, cy, colorLight);
 }
 
+function getSectorDirection(base, color) {
+  const others = color === "red" ? bluePoints : redPoints;
+
+  // 異色点が存在しない場合のデフォルト方向
+  if (others.length === 0) {
+    return (base.x <= 0) ? 0 : Math.PI;
+  }
+
+  let nearest = null;
+  let bestDist = Infinity;
+
+  others.forEach(p => {
+    const dx = p.x - base.x;
+    const dy = p.y - base.y;
+    const d2 = dx * dx + dy * dy;
+    if (d2 < bestDist) {
+      bestDist = d2;
+      nearest = p;
+    }
+  });
+
+  // Canvas 座標系に合わせて Y を反転
+  return Math.atan2(-(nearest.y - base.y), nearest.x - base.x);
+}
+  
 const rangePresets = {
   yuzuEX:        { shape: "sector", radius: 200, angle: 360, center: "nearestOpp" },
   yuzuNS:        { shape: "sector", radius: 100, angle: 360, center: "self" },
