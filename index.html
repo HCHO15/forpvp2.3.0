@@ -714,34 +714,40 @@ function drawRangeAttack() {
 }
 
   function drawSector(centerPoint, preset, scale) {
-  // ← ここに既存の扇形描画ロジックを移動する
-    // ▼ 中心点の座標を使用
-const { cx, cy } = logicalToCanvas(centerPoint.x, centerPoint.y);
-const color = basePoint.color === "red" ? COLOR_RED_LIGHT : COLOR_BLUE_LIGHT;
+  // ▼ 半径・角度を preset から取得
+  const radius = preset.radius * scale;
+  const angleDeg = preset.angle;
+  const angleRad = angleDeg * Math.PI / 180;
 
-ctx.save();
-ctx.fillStyle = color;
+  // ▼ 中心点の座標
+  const { cx, cy } = logicalToCanvas(centerPoint.x, centerPoint.y);
 
-// ▼ 円形（角度360）
-if (angleDeg >= 360) {
-  ctx.beginPath();
-  ctx.arc(cx, cy, radius, 0, Math.PI * 2);
-  ctx.fill();
-}
-// ▼ 扇形
-else {
-  const centerAngle = getSectorDirection(centerPoint, basePoint.color);
-  const start = centerAngle - angleRad / 2;
-  const end = centerAngle + angleRad / 2;
+  // ▼ 色
+  const color = basePoint.color === "red" ? COLOR_RED_LIGHT : COLOR_BLUE_LIGHT;
 
-  ctx.beginPath();
-  ctx.moveTo(cx, cy);
-  ctx.arc(cx, cy, radius, start, end);
-  ctx.closePath();
-  ctx.fill();
-}
+  ctx.save();
+  ctx.fillStyle = color;
 
-ctx.restore();
+  // ▼ 円形（角度360）
+  if (angleDeg >= 360) {
+    ctx.beginPath();
+    ctx.arc(cx, cy, radius, 0, Math.PI * 2);
+    ctx.fill();
+  }
+  // ▼ 扇形
+  else {
+    const centerAngle = getSectorDirection(centerPoint, basePoint.color);
+    const start = centerAngle - angleRad / 2;
+    const end   = centerAngle + angleRad / 2;
+
+    ctx.beginPath();
+    ctx.moveTo(cx, cy);
+    ctx.arc(cx, cy, radius, start, end);
+    ctx.closePath();
+    ctx.fill();
+  }
+
+  ctx.restore();
 }
 
 function drawRingSector(centerPoint, preset, scale) {
