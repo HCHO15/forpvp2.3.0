@@ -654,22 +654,17 @@ function drawRangeAttack() {
   const angleDeg = parseFloat(angleInput.value);
   const angleRad = angleDeg * Math.PI / 180;
 
-/* ▼▼▼ ここから追加：中心点の切り替え ▼▼▼ */
   let centerPoint = self;
 
   if (preset.center === "nearestOpp") {
-      const p = getNearestOppositePoint(self);
-      if (p) centerPoint = p;
-  }
+    const p = getNearestOppositePoint(self);
+    if (p) centerPoint = p;
+}
 
   if (preset.center === "centroidOpp") {
-      const p = getNearestOppositeFromSameColorCentroid(self);
-      if (p) centerPoint = p;
-  }
-/* ▲▲▲ ここまで追加 ▲▲▲ */
-
-
-
+    const p = getNearestOppositeFromSameColorCentroid(self);
+    if (p) centerPoint = p;
+}
   
   const { cx, cy } = logicalToCanvas(self.x, self.y);
   const color = basePoint.color === "red" ? COLOR_RED_LIGHT : COLOR_BLUE_LIGHT;
@@ -943,91 +938,11 @@ angleInput.addEventListener("input", () => {
 });
 
 shortcutSelect.addEventListener("change", () => {
-  const v = shortcutSelect.value;
+  const key = shortcutSelect.value;
 
-  if (v === "tsubaki") {
-    radiusSlider.value = 700;
-    angleInput.value = 360;
-  }
-  if (v === "hanako") {
-    radiusSlider.value = 850;
-    angleInput.value = 60;
-  }
-  if (v === "hoshinoEX") {
-    radiusSlider.value = 300;
-    angleInput.value = 360;
-  }
-  if (v === "hoshinoSS") {
-    radiusSlider.value = 850;
-    angleInput.value = 30;
-  }
-  if (v === "yakumo") {
-    radiusSlider.value = 510;
-    angleInput.value = 360;
-  }
-    if (v === "atsukoEX") {
-    radiusSlider.value = 500;
-    angleInput.value = 360;
-  }
-  if (v === "atsukoNS") {
-    radiusSlider.value = 150;
-    angleInput.value = 360;
-  }
-  if (v === "irohaNS") {
-    radiusSlider.value = 200;
-    angleInput.value = 360;
-  }
-  if (v === "koharuMizugiEX") {
-    radiusSlider.value = 200;
-    angleInput.value = 360;
-  }
-  if (v === "sakiEX") {
-    radiusSlider.value = 100;
-    angleInput.value = 360;
-  }
-  if (v === "sumireEX") {
-    radiusSlider.value = 400;
-    angleInput.value = 45;
-  }
-  if (v === "cherino") {
-    radiusSlider.value = 1000;
-    angleInput.value = 360;
-  }
-  if (v === "nagisaEX") {
-    radiusSlider.value = 250;
-    angleInput.value = 360;
-  }
-  if (v === "nonomiEX") {
-    radiusSlider.value = 950;
-    angleInput.value = 60;
-  }
-  if (v === "hinaMizugi") {
-    radiusSlider.value = 950;
-    angleInput.value = 90;
-  }
-  if (v === "minoriEX") {
-    radiusSlider.value = 300;
-    angleInput.value = 360;
-  }
-  if (v === "minoriNS") {
-    radiusSlider.value = 300;
-    angleInput.value = 360;
-  }
-  if (v === "yuzuEX") {
-    radiusSlider.value = 200;
-    angleInput.value = 360;
-  }
-  if (v === "yuzuNS") {
-    radiusSlider.value = 100;
-    angleInput.value = 360;
-  }
-  if (v === "reisaEX") {
-    radiusSlider.value = 700;
-    angleInput.value = 90;
-  }
-  if (v === "reisaMagicEX") {
-    radiusSlider.value = 2000;
-    angleInput.value = 360;
+  if (key !== "manual" && rangePresets[key]) {
+    radiusSlider.value = rangePresets[key].radius;
+    angleInput.value = rangePresets[key].angle;
   }
 
   radiusValue.textContent = radiusSlider.value;
