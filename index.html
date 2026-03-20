@@ -694,8 +694,17 @@ function drawRangeAttack() {
 
   // ▼ ショートカットのプリセット取得
   const key = shortcutSelect.value;
-  const preset = rangePresets[key] || { shape: "sector", center: "self" };
+  let preset = rangePresets[key] || { shape: "sector", center: "self" };
 
+　// 手動モードでは UI の値を使う
+　if (key === "manual") {
+  　preset = {
+  　  shape: "sector",
+   　 radius: Number(radiusSlider.value),
+   　 angle: Number(angleInput.value),
+   　 center: "self"
+  　};
+}
   // ▼ 半径・角度の取得（UI の値をそのまま使用）
   const scale = 290 / 700;
 
