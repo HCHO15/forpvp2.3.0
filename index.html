@@ -647,6 +647,9 @@ function drawRangeAttack() {
   const self = arr.find(p => p.id === basePoint.id);
   if (!self) return;
 
+  const key = shortcutSelect.value;
+  const preset = rangePresets[key] || { center: "self" };
+  
   const scale = 290 / 700;
   const radiusRaw = parseFloat(radiusSlider.value);
   const radius = radiusRaw * scale;
@@ -666,7 +669,7 @@ function drawRangeAttack() {
     if (p) centerPoint = p;
 }
   
-  const { cx, cy } = logicalToCanvas(self.x, self.y);
+  const { cx, cy } = logicalToCanvas(centerPoint.x, centerPoint.y);
   const color = basePoint.color === "red" ? COLOR_RED_LIGHT : COLOR_BLUE_LIGHT;
 
   ctx.save();
