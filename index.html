@@ -883,7 +883,7 @@ function drawMarinaEX(centerPoint, preset, scale) {
 
   // 反対方向に 550 進む
   const oppositeAngle = baseAngle + Math.PI; // 180°反転
-  const offset = 550; // 論理座標での距離
+  const offset = 550 * scale; 
 
   const centerX = self.x + Math.cos(oppositeAngle) * offset;
   const centerY = self.y - Math.sin(oppositeAngle) * offset;
