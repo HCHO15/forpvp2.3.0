@@ -614,6 +614,24 @@ const rangePresets = {
   yakumo:        { radius: 510, angle: 360, center: "centroidOpp" }
 };
 
+  // 基準点に最も近い異色点を返す
+function getNearestOppositePoint(self) {
+  const others = self.color === "red" ? bluePoints : redPoints;
+  if (!others.length) return null;
+  return findNearest(self, others);
+}
+
+// 基準点と同色の重心 → そこから最も近い異色点を返す
+function getNearestOppositeFromSameColorCentroid(self) {
+  const same = self.color === "red" ? redPoints : bluePoints;
+  const others = self.color === "red" ? bluePoints : redPoints;
+
+  const c = computeCentroid(same);
+  if (!c || !others.length) return null;
+
+  return findNearest(c, others);
+}
+  
 /* =========================
    範囲確認
 ========================= */
