@@ -150,6 +150,7 @@
             <option value="tokiEX12">トキEX1・2撃目</option>
             <option value="tokiEX3">トキEX3撃目</option>
             <option value="hiyoriMizugiEX">ヒヨリ（水着）EX</option>
+            <option value="ioriEX">イオリEX</option>
           </select>
         </div>
 
@@ -259,7 +260,7 @@
         <li><strong>バフSP：</strong> SPバッファーのターゲット を強調します</li>
         <li><strong>攻撃ST：</strong> 基準点に選択したSTの攻撃ターゲット を強調します</li>
         <li><strong>バフST：</strong> 基準点に選択したSTのバフターゲット を強調します</li>
-        <li><strong>範囲確認：</strong> 基準点を中心に円/扇形を描画します（半径・角度調整可）</li>
+        <li><strong>範囲確認：</strong> 基準点に選択したSTまたは同部隊SPのスキル範囲を描画します（半径・角度調整可）</li>
       </ul>
 
       <h4>■ その他</h4>
@@ -661,6 +662,7 @@ const rangePresets = {
   tokiEX3:       { shape: "rectFromSelf", width: 1400, height: 200, center: "nearestOpp" },
   hiyoriMizugiEX:{ shape: "rectFromSelf", width: 1000, height: 50,  center: "nearestOpp" },
   sayaCasualEX:  { shape: "rectCentroidOpp", width: 200, height: 800, center: "centroidOpp" },
+  ioriEX:　　　　 { shape: "ioriEX", center: "nearestOpp" },
   mutsukiNewyearEX: { shape: "ringSector", outer: 1100, inner: 550, angle: 90, center: "self" }
 };
 
@@ -739,6 +741,10 @@ function drawRangeAttack() {
     case "rectFromSelf":
       drawRectFromSelf(centerPoint, preset, scale);
       break;
+
+    case "ioriEX":
+  　　drawIoriEX(centerPoint, preset, scale);
+  　　break;
 
     default:
       // shape が未定義なら sector と同じ扱い
@@ -849,6 +855,43 @@ function drawRectCentroidOpp(centerPoint, preset, scale) {
   ctx.restore();
 }
 
+function drawIoriEX(centerPoint, preset, scale) {
+  // 固定値
+  const radius = 250 * scale;
+  const angleDeg = 60;
+  const angleRad = angleDeg * Math.PI / 180;
+
+  // 基準点
+  const arr = basePoint.color === "red" ? redPoints : bluePoints;
+  const self = arr.find(p => p.id === basePoint.id);
+  if (!self) return;
+
+  // 中心は「最短異色点」
+  const target = getNearestOppositePoint(self);
+  if (!target) return;
+
+  const { cx, cy } = logicalToCanvas(target.x, target.y);
+
+  // 向きは「self → target」
+  const angle = Math.atan2(-(target.y - self.y), target.x - self.x);
+
+  const start = angle - angleRad / 2;
+  const end   = angle + angleRad / 2;
+
+  const color = basePoint.color === "red" ? COLOR_RED_LIGHT : COLOR_BLUE_LIGHT;
+
+  ctx.save();
+  ctx.fillStyle = color;
+
+  ctx.beginPath();
+  ctx.moveTo(cx, cy);
+  ctx.arc(cx, cy, radius, start, end);
+  ctx.closePath();
+  ctx.fill();
+
+  ctx.restore();
+}
+  
 function drawRectFromSelf(centerPoint, preset, scale) {
   // ▼ 幅・高さ（scale 適用）
   const w = preset.width * scale;
