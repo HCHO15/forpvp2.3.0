@@ -1395,15 +1395,15 @@ function drawFiveCirclePattern() {
 
   // E = 200*q*scale * (cos255°, sin255°)
   const rad255 = 255 * Math.PI / 180;
-  const Ex = L *0.92* Math.cos(rad255);
-  const Ey = L *0.92* Math.sin(rad255);
+  const Ex = L *0.94* Math.cos(rad255);
+  const Ey = L *0.94* Math.sin(rad255);
 
   // 描画用のヘルパー
   function drawCircleAt(x, y) {
     const { cx, cy } = logicalToCanvas(x, y);
     ctx.beginPath();
     ctx.arc(cx, cy, R, 0, Math.PI * 2);
-    ctx.fillStyle = "rgba(255, 0, 0, 0.4)";
+    ctx.fillStyle = "rgba(0, 0, 255, 0.4)";
     ctx.fill();
   }
 
