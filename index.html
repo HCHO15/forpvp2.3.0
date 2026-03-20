@@ -138,6 +138,18 @@
             <option value="reisaEX">レイサEX</option>
             <option value="reisaMagicEX">レイサ（マジカル）EX</option>
             <option value="yakumoEX">ヤクモEX</option>
+            <option value="junkoEX">ジュンコEX</option>
+            <option value="sayaCasualEX">サヤ（私服）EX</option>
+            <option value="mutsukiNewyearEX">ムツキ（正月）EX</option>
+            <option value="mutsukiNewyearNS">ムツキ（正月）NS</option>
+            <option value="shirokoRidingNS">シロコ（ライディング）NS</option>
+            <option value="aliceEX">アリスEX</option>
+            <option value="aliceRinsenEX">アリス（臨戦）EX</option>
+            <option value="hinaDressEX1">ヒナ（ドレス）EX1・2回目</option>
+            <option value="hinaDressEX3">ヒナ（ドレス）EX3回目</option>
+            <option value="tokiEX12">トキEX1・2撃目</option>
+            <option value="tokiEX3">トキEX3撃目</option>
+            <option value="hiyoriMizugiEX">ヒヨリ（水着）EX</option>
           </select>
         </div>
 
@@ -593,26 +605,38 @@ function drawCentroidMark(arr, colorLight) {
 }
 
 const rangePresets = {
-  yuzuEX:        { radius: 200, angle: 360, center: "nearestOpp" },
-  yuzuNS:        { radius: 100, angle: 360, center: "self" },
-  atsukoEX:      { radius: 500, angle: 360, center: "self" },
-  atsukoNS:      { radius: 150, angle: 360, center: "self" },
-  koharuMizugiEX:{ radius: 200, angle: 360, center: "nearestOpp" },
-  sakiEX:        { radius: 100, angle: 360, center: "centroidOpp" },
-  sumireEX:      { radius: 400, angle: 45,  center: "self" },
-  cherinoEX:     { radius: 1000,angle: 360, center: "self" },
-  nagisaEX:      { radius: 250, angle: 360, center: "centroidOpp" },
-  nonomiEX:      { radius: 950, angle: 60,  center: "self" },
-  hinaMizugiEX:    { radius: 950, angle: 90,  center: "self" },
-  minoriEX:      { radius: 300, angle: 360, center: "centroidOpp" },
-  minoriNS:      { radius: 300, angle: 360, center: "centroidOpp" },
-  reisaEX:       { radius: 700, angle: 90,  center: "self" },
-  tsubakiEX:       { radius: 700, angle: 360, center: "self" },
-  hanakoMizugiEX:        { radius: 850, angle: 60,  center: "self" },
-  hoshinoRinsenEX:     { radius: 300, angle: 360, center: "nearestOpp" },
-  hoshinoRinsenSS:     { radius: 850, angle: 30,  center: "self" },
-  hasumiMizugiEX:{ radius: 1150,angle: 45,  center: "self" }, 
-  yakumoEX:        { radius: 510, angle: 360, center: "centroidOpp" }
+  yuzuEX:        { shape: "sector", radius: 200, angle: 360, center: "nearestOpp" },
+  yuzuNS:        { shape: "sector", radius: 100, angle: 360, center: "self" },
+  atsukoEX:      { shape: "sector", radius: 500, angle: 360, center: "self" },
+  atsukoNS:      { shape: "sector", radius: 150, angle: 360, center: "self" },
+  koharuMizugiEX:{ shape: "sector", radius: 200, angle: 360, center: "nearestOpp" },
+  sakiEX:        { shape: "sector", radius: 100, angle: 360, center: "centroidOpp" },
+  sumireEX:      { shape: "sector", radius: 400, angle: 45,  center: "self" },
+  cherinoEX:     { shape: "sector", radius: 1000,angle: 360, center: "self" },
+  nagisaEX:      { shape: "sector", radius: 250, angle: 360, center: "centroidOpp" },
+  nonomiEX:      { shape: "sector", radius: 950, angle: 60,  center: "self" },
+  hinaMizugiEX:  { shape: "sector", radius: 950, angle: 90,  center: "self" },
+  minoriEX:      { shape: "sector", radius: 300, angle: 360, center: "centroidOpp" },
+  minoriNS:      { shape: "sector", radius: 300, angle: 360, center: "centroidOpp" },
+  reisaEX:       { shape: "sector", radius: 700, angle: 90,  center: "self" },
+  tsubakiEX:     { shape: "sector", radius: 700, angle: 360, center: "self" },
+  hanakoMizugiEX:{ shape: "sector", radius: 850, angle: 60,  center: "self" },
+  hoshinoRinsenEX:{shape: "sector", radius: 300, angle: 360, center: "nearestOpp" },
+  hoshinoRinsenSS:{shape: "sector", radius: 850, angle: 30,  center: "self" },
+  hasumiMizugiEX:{ shape: "sector", radius: 1150,angle: 45,  center: "self" },
+  yakumoEX:      { shape: "sector", radius: 510, angle: 360, center: "centroidOpp" },
+  junkoEX:       {shape: "rectFromSelf",width: 150, height: 900, center: "self" },
+  sayaCasualEX:  { shape: "rectCentroidOpp", width: 800, height: 200, center: "centroidOpp" },
+  mutsukiNewyearEX: { shape: "ringSector", outer: 1100, inner: 550, angle: 90, center: "self" },
+  mutsukiNewyearNS: { shape: "rectFromSelf", width: 150, height: 950, center: "self" },
+  shirokoRidingNS: { shape: "rectFromSelf", width: 100, height: 850, center: "self" },
+  aliceEX: { shape: "rectFromSelf", width: 200, height: 2000, center: "self" },
+  aliceRinsenEX: { shape: "rectFromSelf", width: 200, height: 1450, center: "self" },
+  hinaDressEX1: { shape: "rectFromSelf", width: 40, height: 2000, center: "self" },
+  hinaDressEX3: { shape: "rectFromSelf", width: 60, height: 2000, center: "self" },
+  tokiEX12:     { shape: "rectFromSelf", width: 50, height: 850, center: "self" },
+  tokiEX3:      { shape: "rectFromSelf", width: 200, height: 1400, center: "self" },
+  hiyoriMizugiEX: { shape: "rectFromSelf", width: 50, height: 1000, center: "self" }
 };
 
   // 基準点に最も近い異色点を返す
@@ -636,29 +660,6 @@ function getNearestOppositeFromSameColorCentroid(self) {
 /* =========================
    範囲確認
 ========================= */
-function getSectorDirection(base, color) {
-  const others = color === "red" ? bluePoints : redPoints;
-
-  if (others.length === 0) {
-    return (base.x <= 0) ? 0 : Math.PI;
-  }
-
-  let nearest = null;
-  let bestDist = Infinity;
-
-  others.forEach(p => {
-    const dx = p.x - base.x;
-    const dy = p.y - base.y;
-    const d2 = dx * dx + dy * dy;
-    if (d2 < bestDist) {
-      bestDist = d2;
-      nearest = p;
-    }
-  });
-
-  return Math.atan2(-(nearest.y - base.y), nearest.x - base.x);
-}
-
 function drawRangeAttack() {
   if (!basePoint) return;
 
@@ -668,15 +669,10 @@ function drawRangeAttack() {
 
   // ▼ ショートカットのプリセット取得
   const key = shortcutSelect.value;
-  const preset = rangePresets[key] || { center: "self" };
+  const preset = rangePresets[key] || { shape: "sector", center: "self" };
 
   // ▼ 半径・角度の取得（UI の値をそのまま使用）
   const scale = 290 / 700;
-  const radiusRaw = parseFloat(radiusSlider.value);
-  const radius = radiusRaw * scale;
-
-  const angleDeg = parseFloat(angleInput.value);
-  const angleRad = angleDeg * Math.PI / 180;
 
   // ▼ 中心点の決定（self / nearestOpp / centroidOpp）
   let centerPoint = self;
@@ -691,35 +687,156 @@ function drawRangeAttack() {
     if (p) centerPoint = p;
   }
 
-  // ▼ 中心点の座標を使用
+  // ▼ shape に応じて描画処理を切り替え
+  switch (preset.shape) {
+
+    case "sector":
+      drawSector(centerPoint, preset, scale);
+      break;
+
+    case "ringSector":
+      drawRingSector(centerPoint, preset, scale);
+      break;
+
+    case "rectCentroidOpp":
+      drawRectCentroidOpp(centerPoint, preset, scale);
+      break;
+
+    case "rectFromSelf":
+      drawRectFromSelf(centerPoint, preset, scale);
+      break;
+
+    default:
+      // shape が未定義なら sector と同じ扱い
+      drawSector(centerPoint, preset, scale);
+      break;
+  }
+}
+
+  function drawSector(centerPoint, preset, scale) {
+  // ← ここに既存の扇形描画ロジックを移動する
+    // ▼ 中心点の座標を使用
+const { cx, cy } = logicalToCanvas(centerPoint.x, centerPoint.y);
+const color = basePoint.color === "red" ? COLOR_RED_LIGHT : COLOR_BLUE_LIGHT;
+
+ctx.save();
+ctx.fillStyle = color;
+
+// ▼ 円形（角度360）
+if (angleDeg >= 360) {
+  ctx.beginPath();
+  ctx.arc(cx, cy, radius, 0, Math.PI * 2);
+  ctx.fill();
+}
+// ▼ 扇形
+else {
+  const centerAngle = getSectorDirection(centerPoint, basePoint.color);
+  const start = centerAngle - angleRad / 2;
+  const end = centerAngle + angleRad / 2;
+
+  ctx.beginPath();
+  ctx.moveTo(cx, cy);
+  ctx.arc(cx, cy, radius, start, end);
+  ctx.closePath();
+  ctx.fill();
+}
+
+ctx.restore();
+}
+
+function drawRingSector(centerPoint, preset, scale) {
+  // 必要パラメータ：outer（外側半径）, inner（内側半径）, angle（角度）
+  const outer = preset.outer * scale;
+  const inner = preset.inner * scale;
+  const angleDeg = preset.angle;
+  const angleRad = angleDeg * Math.PI / 180;
+
+  // 中心座標
   const { cx, cy } = logicalToCanvas(centerPoint.x, centerPoint.y);
+
+  // 色
   const color = basePoint.color === "red" ? COLOR_RED_LIGHT : COLOR_BLUE_LIGHT;
+
+  // 扇の向き
+  const centerAngle = getSectorDirection(centerPoint, basePoint.color);
+  const start = centerAngle - angleRad / 2;
+  const end   = centerAngle + angleRad / 2;
 
   ctx.save();
   ctx.fillStyle = color;
 
-  // ▼ 円形（角度360）
-  if (angleDeg >= 360) {
-    ctx.beginPath();
-    ctx.arc(cx, cy, radius, 0, Math.PI * 2);
-    ctx.fill();
-  } 
-  // ▼ 扇形
-  else {
-    const centerAngle = getSectorDirection(centerPoint, basePoint.color);
-    const start = centerAngle - angleRad / 2;
-    const end = centerAngle + angleRad / 2;
+  ctx.beginPath();
 
-    ctx.beginPath();
-    ctx.moveTo(cx, cy);
-    ctx.arc(cx, cy, radius, start, end);
-    ctx.closePath();
-    ctx.fill();
-  }
+  // ▼ 外側扇形（反時計回り）
+  ctx.arc(cx, cy, outer, start, end, false);
+
+  // ▼ 内側扇形（時計回り）
+  ctx.arc(cx, cy, inner, end, start, true);
+
+  ctx.closePath();
+  ctx.fill();
 
   ctx.restore();
 }
 
+function drawRectCentroidOpp(centerPoint, preset, scale) {
+  // ▼ 幅・高さ（scale 適用）
+  const w = preset.width * scale;
+  const h = preset.height * scale;
+
+  // ▼ 中心点（異色最接近点）
+  const { cx, cy } = logicalToCanvas(centerPoint.x, centerPoint.y);
+
+  // ▼ 基準点部隊の重心を取得
+  const same = basePoint.color === "red" ? redPoints : bluePoints;
+  const centroid = computeCentroid(same);
+  if (!centroid) return;
+
+  // ▼ 重心 → 異色最接近点 の角度
+  const angle = Math.atan2(-(centerPoint.y - centroid.y), centerPoint.x - centroid.x);
+
+  // ▼ 色
+  const color = basePoint.color === "red" ? COLOR_RED_LIGHT : COLOR_BLUE_LIGHT;
+
+  ctx.save();
+  ctx.translate(cx, cy);   // 中心へ移動
+  ctx.rotate(angle);       // 向きを合わせる
+  ctx.fillStyle = color;
+
+  // ▼ 長方形を中心に描画（中心基準なので -w/2, -h/2）
+  ctx.fillRect(-w / 2, -h / 2, w, h);
+
+  ctx.restore();
+}
+
+function drawRectFromSelf(centerPoint, preset, scale) {
+  // ▼ 幅・高さ（scale 適用）
+  const w = preset.width * scale;
+  const h = preset.height * scale;
+
+  // ▼ 基準点 self の座標
+  const arr = basePoint.color === "red" ? redPoints : bluePoints;
+  const self = arr.find(p => p.id === basePoint.id);
+  if (!self) return;
+
+  const { cx, cy } = logicalToCanvas(self.x, self.y);
+
+  // ▼ self → 異色最接近点 の角度
+  const angle = Math.atan2(-(centerPoint.y - self.y), centerPoint.x - self.x);
+
+  // ▼ 色
+  const color = basePoint.color === "red" ? COLOR_RED_LIGHT : COLOR_BLUE_LIGHT;
+
+  ctx.save();
+  ctx.translate(cx, cy);   // self を基準にする
+  ctx.rotate(angle);       // 向きを合わせる
+  ctx.fillStyle = color;
+
+  // ▼ self を左端中央に置くため、(0, -h/2) から描画
+  ctx.fillRect(0, -h / 2, w, h);
+
+  ctx.restore();
+}
 /* =========================
    サブ機能
 ========================= */
