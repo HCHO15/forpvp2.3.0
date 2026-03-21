@@ -1375,8 +1375,8 @@ function drawFiveCirclePattern2() {
   const R = 150 * scale;   // 円の半径
 
   const L_AB = 200 * scale;        // A→B の距離
-  const L_BC = 200 * 1.1 * scale;  // B→C, B→D の距離
-  const L_BE = 200 * scale;        // B→E の距離
+  const L_BC = 200 * 1.08 * scale;  // B→C, B→D の距離
+  const L_BE = 200 * 1.2 * scale;        // B→E の距離
 
   // B = (0,0)
   const Bx = 0;
@@ -1406,7 +1406,7 @@ function drawFiveCirclePattern2() {
     const { cx, cy } = logicalToCanvas(x, y);
     ctx.beginPath();
     ctx.arc(cx, cy, R, 0, Math.PI * 2);
-    ctx.fillStyle = "rgba(255, 0, 0, 0.35)";
+    ctx.fillStyle = "rgba(0, 0, 255, 0.35)";
     ctx.fill();
   }
 
