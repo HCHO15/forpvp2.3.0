@@ -1366,40 +1366,37 @@ updateTablesFromPoints();
 updateCounts();
 
 /* ============================================
-   試験的：5つの円パターン（A-B-C-D-E）描画（Bを原点に変更）
+   試験的：5つの円パターン（A-B-C-D-E）描画
+   原点：B、Aは左方向、C/D/Eは回転で定義
 ============================================ */
 function drawFiveCirclePattern2() {
 
   const scale = 264 / 700; // 現在の描画倍率
   const R = 150 * scale;   // 円の半径
 
-  const L1 = 200 * scale;        // A→B, B→E の基準距離
-  const L2 = 200 * 1.1 * scale;  // B→C, B→D の距離
-  const L3 = 200 * 1.2 * scale;  // ★ B→E の新しい距離
+  const L1 = 200 * scale;        // AB の長さ
+  const L2 = 200 * 1.1 * scale;  // BC, BD, BE の基準長さ
 
   // B = (0,0) に固定（原点）
   const Bx = 0;
   const By = 0;
 
-  // A = B から左へ L1
+  // A：B から左へ L1
   const Ax = -L1;
   const Ay = 0;
 
-  // C：B から時計回り 70°方向へ L2
-  const radC = -70 * Math.PI / 180;
-  const Cx = Bx + L2 * Math.cos(radC);
-  const Cy = By + L2 * Math.sin(radC);
+  // C：点B中心に点Aを反時計回りに70°回転させた方向に、長さ L2
+  const rad70 = 70 * Math.PI / 180;
+  const Cx = -L2 * Math.cos(rad70); // A は (-L1,0) なので、回転後の向きは (-cos70, -sin70)
+  const Cy = -L2 * Math.sin(rad70);
 
-  // D：B→C の反対方向へ L2
-  const angleBC = Math.atan2(Cy - By, Cx - Bx);
-  const angleBD = angleBC + Math.PI;
-  const Dx = Bx + L2 * Math.cos(angleBD);
-  const Dy = By + L2 * Math.sin(angleBD);
+  // D：Bから見てCと反対向きに L2 離れた点（＝Cの反対ベクトル）
+  const Dx = -Cx;
+  const Dy = -Cy;
 
-  // ★ E：点Dを点B中心に反時計回り60°回転させた位置
+  // E：点B中心に点Dを反時計回りに60°回転させた点
   const cos60 = Math.cos(Math.PI / 3);
   const sin60 = Math.sin(Math.PI / 3);
- 
   const Ex = Dx * cos60 - Dy * sin60;
   const Ey = Dx * sin60 + Dy * cos60;
 
