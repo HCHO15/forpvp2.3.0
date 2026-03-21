@@ -1367,45 +1367,46 @@ updateCounts();
 
 /* ============================================
    試験的：5つの円パターン（A-B-C-D-E）描画
-   原点：B、Aは左方向、C/D/Eは回転で定義
+   Bを原点、A→Bをx正方向に合わせる
 ============================================ */
 function drawFiveCirclePattern2() {
 
   const scale = 264 / 700; // 現在の描画倍率
   const R = 150 * scale;   // 円の半径
 
-  const L1 = 200 * scale;        // AB の長さ
-  const L2 = 200 * 1.1 * scale;  // BC, BD, BE の基準長さ
+  const L_AB = 200 * scale;        // A→B の距離
+  const L_BC = 200 * 1.1 * scale;  // B→C, B→D の距離
+  const L_BE = 200 * scale;        // B→E の距離
 
-  // B = (0,0) に固定（原点）
+  // B = (0,0)
   const Bx = 0;
   const By = 0;
 
-  // A：B から左へ L1
-  const Ax = -L1;
+  // A = B から左へ L_AB
+  const Ax = -L_AB;
   const Ay = 0;
 
-  // C：点B中心に点Aを反時計回りに70°回転させた方向に、長さ L2
-  const rad70 = 70 * Math.PI / 180;
-  const Cx = -L2 * Math.cos(rad70); // A は (-L1,0) なので、回転後の向きは (-cos70, -sin70)
-  const Cy = -L2 * Math.sin(rad70);
+  // C：A を時計回り70°回転 → 方向110°
+  const angleC = (110 * Math.PI) / 180;
+  const Cx = L_BC * Math.cos(angleC);
+  const Cy = L_BC * Math.sin(angleC);
 
-  // D：Bから見てCと反対向きに L2 離れた点（＝Cの反対ベクトル）
-  const Dx = -Cx;
-  const Dy = -Cy;
+  // D：C の反対方向 → 110° + 180° = 290°
+  const angleD = (290 * Math.PI) / 180;
+  const Dx = L_BC * Math.cos(angleD);
+  const Dy = L_BC * Math.sin(angleD);
 
-  // E：点B中心に点Dを反時計回りに60°回転させた点
-  const cos60 = Math.cos(Math.PI / 3);
-  const sin60 = Math.sin(Math.PI / 3);
-  const Ex = Dx * cos60 - Dy * sin60;
-  const Ey = Dx * sin60 + Dy * cos60;
+  // E：D を反時計回り50°回転 → 290° + 50° = 340°
+  const angleE = (340 * Math.PI) / 180;
+  const Ex = L_BE * Math.cos(angleE);
+  const Ey = L_BE * Math.sin(angleE);
 
   // 描画ヘルパー
   function drawCircleAt(x, y) {
     const { cx, cy } = logicalToCanvas(x, y);
     ctx.beginPath();
     ctx.arc(cx, cy, R, 0, Math.PI * 2);
-    ctx.fillStyle = "rgba(0, 200, 0, 0.35)";
+    ctx.fillStyle = "rgba(255, 0, 0, 0.35)";
     ctx.fill();
   }
 
