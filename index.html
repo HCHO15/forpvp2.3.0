@@ -866,26 +866,31 @@ function drawRectCentroidOpp(centerPoint, preset, scale) {
 }
 
 function drawHibikiEXRange() {
+  if (!basePoint) return;
 
-  // 基準点の部隊重心（既存関数）
-  const baseCenter = getTeamCentroid(baseTeamColor);
-  if (!baseCenter) return;
+  // 基準点と同色の部隊
+  const same = basePoint.color === "red" ? redPoints : bluePoints;
+  const others = basePoint.color === "red" ? bluePoints : redPoints;
 
-  // 最も近い異色点（既存関数）
-  const nearestEnemy = getNearestEnemyPoint(baseCenter, baseTeamColor);
+  // 基準点の部隊重心
+  const baseCenter = computeCentroid(same);
+  if (!baseCenter || !others.length) return;
+
+  // 最も近い異色点
+  const nearestEnemy = findNearest(baseCenter, others);
   if (!nearestEnemy) return;
 
-  // 角度：基準点 → 最寄り異色点
+  // 角度：基準点重心 → 最寄り異色点
   const dx = nearestEnemy.x - baseCenter.x;
   const dy = nearestEnemy.y - baseCenter.y;
   const angleDeg = Math.atan2(dy, dx) * 180 / Math.PI;
 
   // 塗りつぶし色を基準点と同色に
-  ctx.fillStyle = baseTeamColor === "red"
-    ? "rgba(255,0,0,0.35)"
-    : "rgba(0,0,255,0.35)";
+  ctx.fillStyle = basePoint.color === "red"
+    ? COLOR_RED_LIGHT
+    : COLOR_BLUE_LIGHT;
 
-  // ★ ヒビキEXパターンを描画（中心＝最寄り異色点）
+  // ヒビキEXパターンを描画（中心＝最寄り異色点）
   drawHibikiEX(nearestEnemy, angleDeg);
 }
   
@@ -1440,12 +1445,6 @@ function drawHibikiEX(centerB, angleDeg) {
   drawCircleAt(transform(D_local));
   drawCircleAt(transform(E_local));
 }
-
-  function redraw() {
-  clearCanvas();
-  redPoints.forEach(drawPoint);
-  bluePoints.forEach(drawPoint);
-  applySubFunction();
   
 </script>
 </body>
