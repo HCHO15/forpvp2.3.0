@@ -1366,43 +1366,47 @@ updateTablesFromPoints();
 updateCounts();
 
 
-/* =========================
-   試験的：五つの円を描画する機能（距離200にscale適用版）
-========================= */
-function drawFiveCirclePattern() {
+/* ============================================
+   試験的：5つの円パターン（A-B-C-D-E）描画
+   A→B を x正方向に固定し、A=(0,0)
+============================================ */
+function drawFiveCirclePattern2() {
 
-  const scale = 264 / 700; // 既存の縮尺に合わせる
+  const scale = 264 / 700; // 現在の描画倍率
   const R = 150 * scale;   // 円の半径
-  const L = 200 * scale;   // ★ A→B, A→C, A→D, A→E の距離（scale適用）
+  const L1 = 200 * scale;  // A→B, B→E の距離
+  const L2 = 200 * 1.1 * scale; // B→C, B→D の距離
 
   // A = (0,0)
   const Ax = 0;
   const Ay = 0;
 
   // B = (200*scale, 0)
-  const Bx = L;
+  const Bx = L1;
   const By = 0;
 
-  // C = (-200*scale, 0)
-  const Cx = -L;
-  const Cy = 0;
+  // C：B から時計回り 70°方向へ L2
+  const radC = -70 * Math.PI / 180;
+  const Cx = Bx + L2 * Math.cos(radC);
+  const Cy = By + L2 * Math.sin(radC);
 
-  // D = 200*p*scale * (cos50°, sin50°)
-  const rad50 = 50 * Math.PI / 180;
-  const Dx = L*1.1 * Math.cos(rad50);
-  const Dy = L *1.1* Math.sin(rad50);
+  // D：B から C と反対方向（+180°）へ L2
+  const angleBC = Math.atan2(Cy - By, Cx - Bx);
+  const angleBD = angleBC + Math.PI; // 反対方向
+  const Dx = Bx + L2 * Math.cos(angleBD);
+  const Dy = By + L2 * Math.sin(angleBD);
 
-  // E = 200*q*scale * (cos255°, sin255°)
-  const rad255 = 255 * Math.PI / 180;
-  const Ex = L *0.95* Math.cos(rad255);
-  const Ey = L *0.95* Math.sin(rad255);
+  // E：B から時計回り 50°方向へ L1
+  const radE = -50 * Math.PI / 180;
+  const Ex = Bx + L1 * Math.cos(radE);
+  const Ey = By + L1 * Math.sin(radE);
 
-  // 描画用のヘルパー
+  // 描画ヘルパー
   function drawCircleAt(x, y) {
     const { cx, cy } = logicalToCanvas(x, y);
     ctx.beginPath();
     ctx.arc(cx, cy, R, 0, Math.PI * 2);
-    ctx.fillStyle = "rgba(0, 0, 255, 0.4)";
+    ctx.fillStyle = "rgba(0, 200, 255, 0.35)";
     ctx.fill();
   }
 
@@ -1414,15 +1418,14 @@ function drawFiveCirclePattern() {
   drawCircleAt(Ex, Ey);
 }
 
-function redraw() {
+  function redraw() {
   clearCanvas();
   redPoints.forEach(drawPoint);
   bluePoints.forEach(drawPoint);
   applySubFunction();
 
-  // ★ 試験的描画（必要なときだけ ON）
-  drawFiveCirclePattern();
-  
+  // ★ 試験機能 ON
+  drawFiveCirclePattern2();
 }
   
 </script>
