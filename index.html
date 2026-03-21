@@ -1396,10 +1396,12 @@ function drawFiveCirclePattern2() {
   const Dx = Bx + L2 * Math.cos(angleBD);
   const Dy = By + L2 * Math.sin(angleBD);
 
-  // E：BD に対して時計回り60°の位置（＝BD + 60°）
-  const radE = angleBD + (60 * Math.PI / 180);
-  const Ex = Bx + L3 * Math.cos(radE);
-  const Ey = By + L3 * Math.sin(radE);
+  // ★ E：点Dを点B中心に反時計回り60°回転させた位置
+  const cos60 = Math.cos(Math.PI / 3);
+  const sin60 = Math.sin(Math.PI / 3);
+ 
+  const Ex = Dx * cos60 - Dy * sin60;
+  const Ey = Dx * sin60 + Dy * cos60;
 
   // 描画ヘルパー
   function drawCircleAt(x, y) {
