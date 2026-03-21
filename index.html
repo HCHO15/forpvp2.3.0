@@ -1393,57 +1393,52 @@ redraw();
 updateTablesFromPoints();
 updateCounts();
 
-/* ============================================
-   試験的：5つの円パターン（A-B-C-D-E）描画
-   Bを原点、A→Bをx正方向に合わせる
-============================================ */
-function drawFiveCirclePattern2() {
+function drawHibikiEX(centerB, angleDeg) {
 
-  const scale = 129 / 350; // 現在の描画倍率
-  const R = 150 * scale;   // 円の半径
+  const scale = 129 / 350;
+  const R = 150 * scale;
 
-  const L_AB = 200 * scale;        // A→B の距離
-  const L_BC = 200 * 1.05 * scale;  // B→C, B→D の距離
-  const L_BE = 200 * 1.14 * scale;        // B→E の距離
+  const L_AB = 200 * scale;
+  const L_BC = 200 * 1.05 * scale;
+  const L_BE = 200 * 1.14 * scale;
 
-  // B = (0,0)
-  const Bx = 0;
-  const By = 0;
+  const A_local = { x: -L_AB, y: 0 };
+  const B_local = { x: 0, y: 0 };
+  const C_local = {
+    x: L_BC * Math.cos(110 * Math.PI / 180),
+    y: L_BC * Math.sin(110 * Math.PI / 180)
+  };
+  const D_local = {
+    x: L_BC * Math.cos(290 * Math.PI / 180),
+    y: L_BC * Math.sin(290 * Math.PI / 180)
+  };
+  const E_local = {
+    x: L_BE * Math.cos(340 * Math.PI / 180),
+    y: L_BE * Math.sin(340 * Math.PI / 180)
+  };
 
-  // A = B から左へ L_AB
-  const Ax = -L_AB;
-  const Ay = 0;
+  const rad = angleDeg * Math.PI / 180;
+  const cos = Math.cos(rad);
+  const sin = Math.sin(rad);
 
-  // C：A を時計回り70°回転 → 方向110°
-  const angleC = (110 * Math.PI) / 180;
-  const Cx = L_BC * Math.cos(angleC);
-  const Cy = L_BC * Math.sin(angleC);
+  function transform(p) {
+    const x = p.x * cos - p.y * sin;
+    const y = p.x * sin + p.y * cos;
+    return { x: x + centerB.x, y: y + centerB.y };
+  }
 
-  // D：C の反対方向 → 110° + 180° = 290°
-  const angleD = (290 * Math.PI) / 180;
-  const Dx = L_BC * Math.cos(angleD);
-  const Dy = L_BC * Math.sin(angleD);
-
-  // E：D を反時計回り50°回転 → 290° + 50° = 340°
-  const angleE = (340 * Math.PI) / 180;
-  const Ex = L_BE * Math.cos(angleE);
-  const Ey = L_BE * Math.sin(angleE);
-
-  // 描画ヘルパー
-  function drawCircleAt(x, y) {
-    const { cx, cy } = logicalToCanvas(x, y);
+  function drawCircleAt(p) {
+    const { cx, cy } = logicalToCanvas(p.x, p.y);
     ctx.beginPath();
     ctx.arc(cx, cy, R, 0, Math.PI * 2);
-    ctx.fillStyle = "rgba(0, 0, 255, 0.35)";
     ctx.fill();
   }
 
-  // 円A〜Eを描画
-  drawCircleAt(Ax, Ay);
-  drawCircleAt(Bx, By);
-  drawCircleAt(Cx, Cy);
-  drawCircleAt(Dx, Dy);
-  drawCircleAt(Ex, Ey);
+  drawCircleAt(transform(A_local));
+  drawCircleAt(transform(B_local));
+  drawCircleAt(transform(C_local));
+  drawCircleAt(transform(D_local));
+  drawCircleAt(transform(E_local));
 }
 
   function redraw() {
