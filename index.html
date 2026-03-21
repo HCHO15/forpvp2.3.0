@@ -138,6 +138,7 @@
             <option value="hinaMizugiEX">ヒナ（水着）EX</option>
             <option value="hinaDressEX1">ヒナ（ドレス）EX1・2回目</option>
             <option value="hinaDressEX3">ヒナ（ドレス）EX3回目</option>
+            <option value="hibikiEX">ヒビキEX</option>
             <option value="hiyoriMizugiEX">ヒヨリ（水着）EX</option>
             <option value="hoshinoRinsenEX">ホシノ（臨戦）EX</option>
             <option value="hoshinoRinsenSS">ホシノ（臨戦）SS</option>
@@ -743,6 +744,10 @@ function drawRangeAttack() {
       drawRectFromSelf(centerPoint, preset, scale);
       break;
 
+    case "hibikiEX":
+  　　drawHibikiEXRange();
+  　　break;
+      
     case "marinaEX":
 　　  drawMarinaEX(centerPoint, preset, scale);
   　　break;
@@ -860,7 +865,30 @@ function drawRectCentroidOpp(centerPoint, preset, scale) {
   ctx.restore();
 }
 
+function drawHibikiEXRange() {
 
+  // 基準点の部隊重心（既存関数）
+  const baseCenter = getTeamCentroid(baseTeamColor);
+  if (!baseCenter) return;
+
+  // 最も近い異色点（既存関数）
+  const nearestEnemy = getNearestEnemyPoint(baseCenter, baseTeamColor);
+  if (!nearestEnemy) return;
+
+  // 角度：基準点 → 最寄り異色点
+  const dx = nearestEnemy.x - baseCenter.x;
+  const dy = nearestEnemy.y - baseCenter.y;
+  const angleDeg = Math.atan2(dy, dx) * 180 / Math.PI;
+
+  // 塗りつぶし色を基準点と同色に
+  ctx.fillStyle = baseTeamColor === "red"
+    ? "rgba(255,0,0,0.35)"
+    : "rgba(0,0,255,0.35)";
+
+  // ★ ヒビキEXパターンを描画（中心＝最寄り異色点）
+  drawHibikiEX(nearestEnemy, angleDeg);
+}
+  
 function drawMarinaEX(centerPoint, preset, scale) {
   // 固定値
   const outer = 1000 * scale;
@@ -1423,10 +1451,6 @@ function drawFiveCirclePattern2() {
   redPoints.forEach(drawPoint);
   bluePoints.forEach(drawPoint);
   applySubFunction();
-
-  // ★ 試験機能 ON
-  drawFiveCirclePattern2();
-}
   
 </script>
 </body>
