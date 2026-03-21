@@ -635,7 +635,7 @@ const rangePresets = {
   yuzuNS:        { shape: "sector", radius: 100, angle: 360, center: "self" },
   atsukoEX:      { shape: "sector", radius: 500, angle: 360, center: "self" },
   atsukoNS:      { shape: "sector", radius: 150, angle: 360, center: "self" },
-  koharuMizugiEX:{ shape: "sector", radius: 200, angle: 360, center: "nearestOpp" },
+  koharuMizugiEX:{ shape: "sector", radius: 250, angle: 360, center: "nearestOpp" },
   sakiEX:        { shape: "sector", radius: 100, angle: 360, center: "centroidOpp" },
   sumireEX:      { shape: "sector", radius: 400, angle: 45,  center: "self" },
   cherinoEX:     { shape: "sector", radius: 1000,angle: 360, center: "self" },
@@ -709,7 +709,7 @@ function drawRangeAttack() {
   　};
 }
   // ▼ 半径・角度の取得（UI の値をそのまま使用）
-  const scale = 264 / 700;
+  const scale = 700 / 700;
 
   // ▼ 中心点の決定（self / nearestOpp / centroidOpp）
   let centerPoint = self;
