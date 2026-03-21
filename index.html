@@ -1396,8 +1396,8 @@ function drawFiveCirclePattern2() {
   const Dx = Bx + L2 * Math.cos(angleBD);
   const Dy = By + L2 * Math.sin(angleBD);
 
-  // E：B から時計回り 60°方向へ L3
-  const radE = -60 * Math.PI / 180;
+  // E：BD に対して時計回り60°の位置（＝BD + 60°）
+  const radE = angleBD + (60 * Math.PI / 180);
   const Ex = Bx + L3 * Math.cos(radE);
   const Ey = By + L3 * Math.sin(radE);
 
