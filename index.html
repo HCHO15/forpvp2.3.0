@@ -374,7 +374,14 @@ function getSkillCenterAndAngle(self, preset) {
     if (p) center = p;
   }
 
-  const angle = Math.atan2(-(center.y - self.y), center.x - self.x);
+  // ★ center が self のときは「最も近い異色点方向」を向きにする
+  let angle;
+  if (center === self) {
+    angle = getSectorDirection(self, self.color);
+  } else {
+    angle = Math.atan2(-(center.y - self.y), center.x - self.x);
+  }
+
   return { center, angle };
 }
 
@@ -726,10 +733,9 @@ function getNearestOppositeFromSameColorCentroid(self) {
   return findNearest(c, others);
 }
 
-<script>
-/* =========================
-   範囲確認
-========================= */
+/***************************
+ * 範囲確認
+ ***************************/
 function drawRangeAttack() {
   if (!basePoint) return;
 
