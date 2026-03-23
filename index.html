@@ -335,6 +335,29 @@ let isDragging = false;
 
 let basePoint = null;
 
+// ▼ 共通ヘルパー
+function getPointsByColor(color) {
+  return color === "red" ? redPoints : bluePoints;
+}
+
+function getOppositePointsByColor(color) {
+  return color === "red" ? bluePoints : redPoints;
+}
+
+function getBaseSelf() {
+  if (!basePoint) return null;
+  const arr = getPointsByColor(basePoint.color);
+  return arr.find(p => p.id === basePoint.id) || null;
+}
+
+function getLightColorByBase() {
+  return basePoint && basePoint.color === "red" ? COLOR_RED_LIGHT : COLOR_BLUE_LIGHT;
+}
+
+function getLightColorByColor(color) {
+  return color === "red" ? COLOR_RED_LIGHT : COLOR_BLUE_LIGHT;
+}
+  
 /* 背景画像 */
 const bgImage = new Image();
 bgImage.src = "S10 map.png";
@@ -671,15 +694,14 @@ const rangePresets = {
 
   // 基準点に最も近い異色点を返す
 function getNearestOppositePoint(self) {
-  const others = self.color === "red" ? bluePoints : redPoints;
+  const others = getOppositePointsByColor(self.color);
   if (!others.length) return null;
   return findNearest(self, others);
 }
 
-// 基準点と同色の重心 → そこから最も近い異色点を返す
 function getNearestOppositeFromSameColorCentroid(self) {
-  const same = self.color === "red" ? redPoints : bluePoints;
-  const others = self.color === "red" ? bluePoints : redPoints;
+  const same = getPointsByColor(self.color);
+  const others = getOppositePointsByColor(self.color);
 
   const c = computeCentroid(same);
   if (!c || !others.length) return null;
@@ -693,8 +715,7 @@ function getNearestOppositeFromSameColorCentroid(self) {
 function drawRangeAttack() {
   if (!basePoint) return;
 
-  const arr = basePoint.color === "red" ? redPoints : bluePoints;
-  const self = arr.find(p => p.id === basePoint.id);
+  const self = getBaseSelf();
   if (!self) return;
 
   // ▼ ショートカットのプリセット取得
@@ -774,7 +795,7 @@ function drawRangeAttack() {
   const { cx, cy } = logicalToCanvas(centerPoint.x, centerPoint.y);
 
   // ▼ 色
-  const color = basePoint.color === "red" ? COLOR_RED_LIGHT : COLOR_BLUE_LIGHT;
+  const color = getLightColorByBase();
 
   ctx.save();
   ctx.fillStyle = color;
@@ -812,7 +833,7 @@ function drawRingSector(centerPoint, preset, scale) {
   const { cx, cy } = logicalToCanvas(centerPoint.x, centerPoint.y);
 
   // 色
-  const color = basePoint.color === "red" ? COLOR_RED_LIGHT : COLOR_BLUE_LIGHT;
+  const color = getLightColorByBase();
 
   // 扇の向き
   const centerAngle = getSectorDirection(centerPoint, basePoint.color);
@@ -853,7 +874,7 @@ function drawRectCentroidOpp(centerPoint, preset, scale) {
   const angle = Math.atan2(-(centerPoint.y - centroid.y), centerPoint.x - centroid.x);
 
   // ▼ 色
-  const color = basePoint.color === "red" ? COLOR_RED_LIGHT : COLOR_BLUE_LIGHT;
+  const color = getLightColorByBase();
 
   ctx.save();
   ctx.translate(cx, cy);   // 中心へ移動
@@ -870,8 +891,8 @@ function drawHibikiEXRange() {
   if (!basePoint) return;
 
   // 基準点と同色の部隊
-  const same = basePoint.color === "red" ? redPoints : bluePoints;
-  const others = basePoint.color === "red" ? bluePoints : redPoints;
+  const same = getPointsByColor(basePoint.color);
+  const others = getOppositePointsByColor(basePoint.color);
 
   // 基準点の部隊重心
   const baseCenter = computeCentroid(same);
@@ -903,8 +924,7 @@ function drawMarinaEX(centerPoint, preset, scale) {
   const angleRad = angleDeg * Math.PI / 180;
 
   // 基準点
-  const arr = basePoint.color === "red" ? redPoints : bluePoints;
-  const self = arr.find(p => p.id === basePoint.id);
+  const self = getBaseSelf();
   if (!self) return;
 
   // 最短異色点
@@ -927,7 +947,7 @@ function drawMarinaEX(centerPoint, preset, scale) {
   const start = baseAngle - angleRad / 2;
   const end   = baseAngle + angleRad / 2;
 
-  const color = basePoint.color === "red" ? COLOR_RED_LIGHT : COLOR_BLUE_LIGHT;
+  const color = getLightColorByBase();
 
   ctx.save();
   ctx.fillStyle = color;
@@ -953,8 +973,7 @@ function drawIoriEX(centerPoint, preset, scale) {
   const angleRad = angleDeg * Math.PI / 180;
 
   // 基準点
-  const arr = basePoint.color === "red" ? redPoints : bluePoints;
-  const self = arr.find(p => p.id === basePoint.id);
+  const self = getBaseSelf();
   if (!self) return;
 
   // 中心は「最短異色点」
@@ -969,7 +988,7 @@ function drawIoriEX(centerPoint, preset, scale) {
   const start = angle - angleRad / 2;
   const end   = angle + angleRad / 2;
 
-  const color = basePoint.color === "red" ? COLOR_RED_LIGHT : COLOR_BLUE_LIGHT;
+  const color = getLightColorByBase();
 
   ctx.save();
   ctx.fillStyle = color;
@@ -999,7 +1018,7 @@ function drawRectFromSelf(centerPoint, preset, scale) {
   const angle = Math.atan2(-(centerPoint.y - self.y), centerPoint.x - self.x);
 
   // ▼ 色
-  const color = basePoint.color === "red" ? COLOR_RED_LIGHT : COLOR_BLUE_LIGHT;
+  const color = getLightColorByBase();
 
   ctx.save();
   ctx.translate(cx, cy);   // self を基準にする
@@ -1047,14 +1066,15 @@ function applyBuffSP() {
 function applyAttackST() {
   if (!basePoint) return;
 
-  const arrSelf = basePoint.color === "red" ? redPoints : bluePoints;
-  const arrOther = basePoint.color === "red" ? bluePoints : redPoints;
+  const arrSelf = getPointsByColor(basePoint.color);
+const arrOther = getOppositePointsByColor(basePoint.color);
 
-  const self = arrSelf.find(p => p.id === basePoint.id);
+const self = arrSelf.find(p => p.id === basePoint.id);
+
   if (!self || !arrOther.length) return;
 
   const nearest = findNearest(self, arrOther);
-  const color = basePoint.color === "red" ? COLOR_RED_LIGHT : COLOR_BLUE_LIGHT;
+  const color = getLightColorByBase();
 
   drawHighlightCircle(nearest, color);
 }
@@ -1062,14 +1082,16 @@ function applyAttackST() {
 function applyBuffST() {
   if (!basePoint) return;
 
-  const arrSelf = basePoint.color === "red" ? redPoints : bluePoints;
+  const arrSelf = getPointsByColor(basePoint.color);
   const self = arrSelf.find(p => p.id === basePoint.id);
+
   if (!self || arrSelf.length < 2) return;
 
   const others = arrSelf.filter(p => p.id !== basePoint.id);
   const nearest = findNearest(self, others);
 
-  const color = basePoint.color === "red" ? COLOR_RED_LIGHT : COLOR_BLUE_LIGHT;
+  const color = getLightColorByBase();
+
   drawHighlightCircle(nearest, color);
 }
 
