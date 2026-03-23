@@ -357,6 +357,31 @@ function getLightColorByBase() {
 function getLightColorByColor(color) {
   return color === "red" ? COLOR_RED_LIGHT : COLOR_BLUE_LIGHT;
 }
+
+/* =========================
+   範囲描画の共通ヘルパー
+========================= */
+
+// ▼ スキル中心点と向きを決める共通関数
+function getSkillCenterAndAngle(self, preset) {
+  let center = self;
+
+  // 中心点の決定
+  if (preset.center === "nearestOpp") {
+    const p = getNearestOppositePoint(self);
+    if (p) center = p;
+  }
+
+  if (preset.center === "centroidOpp") {
+    const p = getNearestOppositeFromSameColorCentroid(self);
+    if (p) center = p;
+  }
+
+  // self → center の角度（Canvas座標系対応）
+  const angle = Math.atan2(-(center.y - self.y), center.x - self.x);
+
+  return { center, angle };
+}
   
 /* 背景画像 */
 const bgImage = new Image();
