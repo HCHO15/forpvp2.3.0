@@ -814,13 +814,14 @@ function drawSector(centerPoint, preset, scale) {
   const self = getBaseSelf();
   if (!self) return;
 
-  const { center, angle } = getSkillCenterAndAngle(self, preset);
+  // self → centerPoint の角度
+  const angle = Math.atan2(-(centerPoint.y - self.y), centerPoint.x - self.x);
 
   const radius = preset.radius * scale;
   const angleDeg = preset.angle;
   const angleRad = angleDeg * Math.PI / 180;
 
-  const { cx, cy } = logicalToCanvas(center.x, center.y);
+  const { cx, cy } = logicalToCanvas(centerPoint.x, centerPoint.y);
   const color = getLightColorByBase();
 
   ctx.save();
