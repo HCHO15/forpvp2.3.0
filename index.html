@@ -733,6 +733,48 @@ function getNearestOppositeFromSameColorCentroid(self) {
   return findNearest(c, others);
 }
 
+/* =========================
+   範囲描画ユーティリティ
+========================= */
+function fillAnnularSector(cx, cy, innerR, outerR, angleDeg, directionRad, color) {
+  const angleRad = angleDeg * Math.PI / 180;
+  const start = directionRad - angleRad / 2;
+  const end   = directionRad + angleRad / 2;
+
+  ctx.save();
+  ctx.fillStyle = color;
+
+  ctx.beginPath();
+  ctx.arc(cx, cy, outerR, start, end, false);
+  ctx.arc(cx, cy, innerR, end, start, true);
+  ctx.closePath();
+  ctx.fill();
+
+  ctx.restore();
+}
+
+// 汎用：回転長方形を描く
+// cx, cy = 中心座標（キャンバス座標）
+// w, h = 幅・高さ
+// angleRad = 回転角度（ラジアン）
+// mode = "center" | "fromSelf"
+function drawRotatedRect(cx, cy, w, h, angleRad, color, mode = "center") {
+  ctx.save();
+  ctx.translate(cx, cy);
+  ctx.rotate(angleRad);
+  ctx.fillStyle = color;
+
+  if (mode === "center") {
+    // 中心基準
+    ctx.fillRect(-w / 2, -h / 2, w, h);
+  } else {
+    // 左端中央基準（self → 敵方向に伸びるタイプ）
+    ctx.fillRect(0, -h / 2, w, h);
+  }
+
+  ctx.restore();
+}
+
 /***************************
  * 範囲確認
  ***************************/
@@ -841,50 +883,33 @@ function drawRingSector(centerPoint, preset, scale) {
   const self = getBaseSelf();
   if (!self) return;
 
+  // 扇形と同じロジックで「中心」と「向き」を取得
   const { center, angle: centerAngle } = getSkillCenterAndAngle(self, preset);
 
   const outer = preset.outer * scale;
   const inner = preset.inner * scale;
   const angleDeg = preset.angle;
-  const angleRad = angleDeg * Math.PI / 180;
 
   const { cx, cy } = logicalToCanvas(center.x, center.y);
   const color = getLightColorByBase();
 
-  const start = centerAngle - angleRad / 2;
-  const end   = centerAngle + angleRad / 2;
-
-  ctx.save();
-  ctx.fillStyle = color;
-
-  ctx.beginPath();
-  ctx.arc(cx, cy, outer, start, end, false);
-  ctx.arc(cx, cy, inner, end, start, true);
-  ctx.closePath();
-  ctx.fill();
-
-  ctx.restore();
+  fillAnnularSector(cx, cy, inner, outer, angleDeg, centerAngle, color);
 }
 
 function drawRectCentroidOpp(centerPoint, preset, scale) {
   const w = preset.width * scale;
   const h = preset.height * scale;
 
-  const { cx, cy } = logicalToCanvas(centerPoint.x, centerPoint.y);
-
-  const same = basePoint.color === "red" ? redPoints : bluePoints;
+  const same = getPointsByColor(basePoint.color);
   const centroid = computeCentroid(same);
   if (!centroid) return;
 
   const angle = Math.atan2(-(centerPoint.y - centroid.y), centerPoint.x - centroid.x);
+
+  const { cx, cy } = logicalToCanvas(centerPoint.x, centerPoint.y);
   const color = getLightColorByBase();
 
-  ctx.save();
-  ctx.translate(cx, cy);
-  ctx.rotate(angle);
-  ctx.fillStyle = color;
-  ctx.fillRect(-w / 2, -h / 2, w, h);
-  ctx.restore();
+  drawRotatedRect(cx, cy, w, h, angle, color, "center");
 }
 
 function drawHibikiEXRange() {
@@ -899,23 +924,14 @@ function drawHibikiEXRange() {
   const nearestEnemy = findNearest(baseCenter, others);
   if (!nearestEnemy) return;
 
-  const dx = nearestEnemy.x - baseCenter.x;
-  const dy = nearestEnemy.y - baseCenter.y;
-  const angleDeg = Math.atan2(dy, dx) * 180 / Math.PI;
+  const angle = Math.atan2(nearestEnemy.y - baseCenter.y, nearestEnemy.x - baseCenter.x);
 
-  ctx.fillStyle = basePoint.color === "red"
-    ? COLOR_RED_LIGHT
-    : COLOR_BLUE_LIGHT;
+  ctx.fillStyle = getLightColorByBase();
 
-  drawHibikiEX(nearestEnemy, angleDeg);
+  drawHibikiEX(nearestEnemy, angle * 180 / Math.PI);
 }
   
 function drawMarinaEX(centerPoint, preset, scale) {
-  const outer = 1000 * scale;
-  const inner = 500 * scale;
-  const angleDeg = 50;
-  const angleRad = angleDeg * Math.PI / 180;
-
   const self = getBaseSelf();
   if (!self) return;
 
@@ -924,36 +940,25 @@ function drawMarinaEX(centerPoint, preset, scale) {
 
   const baseAngle = Math.atan2(-(target.y - self.y), target.x - self.x);
 
+  // 反対方向に 550 進む
   const oppositeAngle = baseAngle + Math.PI;
-  const offset = 550 * scale; 
+  const offset = 550 * scale;
 
   const centerX = self.x + Math.cos(oppositeAngle) * offset;
   const centerY = self.y - Math.sin(oppositeAngle) * offset;
 
   const { cx, cy } = logicalToCanvas(centerX, centerY);
-
-  const start = baseAngle - angleRad / 2;
-  const end   = baseAngle + angleRad / 2;
-
   const color = getLightColorByBase();
 
-  ctx.save();
-  ctx.fillStyle = color;
+  // 固定値
+  const outer = 1000 * scale;
+  const inner = 500 * scale;
+  const angleDeg = 50;
 
-  ctx.beginPath();
-  ctx.arc(cx, cy, outer, start, end, false);
-  ctx.arc(cx, cy, inner, end, start, true);
-  ctx.closePath();
-  ctx.fill();
-
-  ctx.restore();
+  fillAnnularSector(cx, cy, inner, outer, angleDeg, baseAngle, color);
 }
   
 function drawIoriEX(centerPoint, preset, scale) {
-  const radius = 250 * scale;
-  const angleDeg = 60;
-  const angleRad = angleDeg * Math.PI / 180;
-
   const self = getBaseSelf();
   if (!self) return;
 
@@ -961,23 +966,26 @@ function drawIoriEX(centerPoint, preset, scale) {
   if (!target) return;
 
   const { cx, cy } = logicalToCanvas(target.x, target.y);
+  const color = getLightColorByBase();
 
   const angle = Math.atan2(-(target.y - self.y), target.x - self.x);
 
+  // Iori 固定値
+  const radius = 250 * scale;
+  const angleDeg = 60;
+
+  // 共通扇形描画
+  const angleRad = angleDeg * Math.PI / 180;
   const start = angle - angleRad / 2;
   const end   = angle + angleRad / 2;
 
-  const color = getLightColorByBase();
-
   ctx.save();
   ctx.fillStyle = color;
-
   ctx.beginPath();
   ctx.moveTo(cx, cy);
   ctx.arc(cx, cy, radius, start, end);
   ctx.closePath();
   ctx.fill();
-
   ctx.restore();
 }
   
@@ -993,12 +1001,7 @@ function drawRectFromSelf(centerPoint, preset, scale) {
   const { cx, cy } = logicalToCanvas(self.x, self.y);
   const color = getLightColorByBase();
 
-  ctx.save();
-  ctx.translate(cx, cy);
-  ctx.rotate(angle);
-  ctx.fillStyle = color;
-  ctx.fillRect(0, -h / 2, w, h);
-  ctx.restore();
+  drawRotatedRect(cx, cy, w, h, angle, color, "fromSelf");
 }
 
 /* =========================
