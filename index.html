@@ -1212,44 +1212,6 @@ function getSectorDirection(base, color) {
 
   return Math.atan2(-(nearest.y - base.y), nearest.x - base.x);
 }
-  
-const rangePresets = {
-  yuzuEX:        { shape: "sector", radius: 200, angle: 360, center: "nearestOpp" },
-  yuzuNS:        { shape: "sector", radius: 100, angle: 360, center: "self" },
-  atsukoEX:      { shape: "sector", radius: 500, angle: 360, center: "self" },
-  atsukoNS:      { shape: "sector", radius: 150, angle: 360, center: "self" },
-  koharuMizugiEX:{ shape: "sector", radius: 250, angle: 360, center: "nearestOpp" },
-  sakiEX:        { shape: "sector", radius: 100, angle: 360, center: "centroidOpp" },
-  sumireEX:      { shape: "sector", radius: 400, angle: 45,  center: "self" },
-  cherinoEX:     { shape: "sector", radius: 1000,angle: 360, center: "self" },
-  nagisaEX:      { shape: "sector", radius: 250, angle: 360, center: "centroidOpp" },
-  nonomiEX:      { shape: "sector", radius: 950, angle: 60,  center: "self" },
-  hinaMizugiEX:  { shape: "sector", radius: 950, angle: 90,  center: "self" },
-  minoriEX:      { shape: "sector", radius: 300, angle: 360, center: "centroidOpp" },
-  minoriNS:      { shape: "sector", radius: 300, angle: 360, center: "centroidOpp" },
-  reisaEX:       { shape: "sector", radius: 700, angle: 90,  center: "self" },
-  tsubakiEX:     { shape: "sector", radius: 700, angle: 360, center: "self" },
-  hanakoMizugiEX:{ shape: "sector", radius: 850, angle: 60,  center: "self" },
-  hoshinoRinsenEX:{shape: "sector", radius: 300, angle: 360, center: "nearestOpp" },
-  hoshinoRinsenSS:{shape: "sector", radius: 850, angle: 30,  center: "self" },
-  hasumiMizugiEX:{ shape: "sector", radius: 1150,angle: 45,  center: "self" },
-  yakumoEX:      { shape: "sector", radius: 510, angle: 360, center: "centroidOpp" },
-  junkoEX:       { shape: "rectFromSelf", width: 900,  height: 150, center: "nearestOpp" },
-  mutsukiNewyearNS: { shape: "rectFromSelf", width: 950,  height: 150, center: "nearestOpp" },
-  shirokoRidingNS: { shape: "rectFromSelf", width: 850,  height: 100, center: "nearestOpp" },
-  aliceEX:       { shape: "rectFromSelf", width: 2000, height: 200, center: "nearestOpp" },
-  aliceRinsenEX: { shape: "rectFromSelf", width: 1450, height: 200, center: "nearestOpp" },
-  hinaDressEX1:  { shape: "rectFromSelf", width: 2000, height: 40,  center: "nearestOpp" },
-  hinaDressEX3:  { shape: "rectFromSelf", width: 2000, height: 60,  center: "nearestOpp" },
-  tokiEX12:      { shape: "rectFromSelf", width: 850,  height: 50,  center: "nearestOpp" },
-  tokiEX3:       { shape: "rectFromSelf", width: 1400, height: 200, center: "nearestOpp" },
-  hiyoriMizugiEX:{ shape: "rectFromSelf", width: 1000, height: 50,  center: "nearestOpp" },
-  sayaCasualEX:  { shape: "rectCentroidOpp", width: 200, height: 800, center: "centroidOpp" },
-  hibikiEX:      { shape: "hibikiEX", center: "nearestOpp" },
-  ioriEX:        { shape: "ioriEX", center: "nearestOpp" },
-  marinaEX:      { shape: "marinaEX", center: "nearestOpp" },
-  mutsukiNewyearEX: { shape: "ringSector", outer: 1100, inner: 550, angle: 90, center: "self" }
-};
 
 function getNearestOppositePoint(self) {
   const others = getOppositePointsByColor(self.color);
