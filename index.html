@@ -768,6 +768,31 @@ function fillAnnularSector(cx, cy, innerR, outerR, angleDeg, directionRad, color
   ctx.restore();
 }
 
+function resolveCenter(self, centerType) {
+  if (centerType === "self") return self;
+  if (centerType === "nearestOpp") return getNearestOppositePoint(self) || self;
+  if (centerType === "centroidOpp") return getNearestOppositeFromSameColorCentroid(self) || self;
+  return self;
+}
+
+function resolveDirection(self, center, centerType) {
+  if (centerType === "self") {
+    return getSectorDirection(self, self.color);
+  }
+  return Math.atan2(-(center.y - self.y), center.x - self.x);
+}
+
+function scaledParams(params, scale) {
+  const out = { ...params };
+  if (out.radius) out.radius *= scale;
+  if (out.outer)  out.outer  *= scale;
+  if (out.inner)  out.inner  *= scale;
+  if (out.width)  out.width *= scale;
+  if (out.height) out.height *= scale;
+  if (out.offset) out.offset *= scale;
+  return out;
+}
+  
 // 汎用：回転長方形を描く
 // cx, cy = 中心座標（キャンバス座標）
 // w, h = 幅・高さ
@@ -1281,9 +1306,8 @@ function drawRangeAttack() {
   if (!self) return;
 
   const key = shortcutSelect.value;
-  let preset = rangePresets[key] || { shape: "sector", center: "self", params:{ radius:700, angleDeg:360 } };
+  let preset = rangePresets[key];
 
-  // ▼ manual モード（STEP2 対応済）
   if (key === "manual") {
     preset = {
       shape: "sector",
@@ -1297,54 +1321,18 @@ function drawRangeAttack() {
 
   const scale = 129 / 350;
 
-  // ▼ 中心点の決定（STEP2 ではまだこのまま）
-  let centerPoint = self;
+  const center = resolveCenter(self, preset.center);
+  const direction = resolveDirection(self, center, preset.center);
+  const { cx, cy } = logicalToCanvas(center.x, center.y);
+  const p = scaledParams(preset.params, scale);
 
-  if (preset.center === "nearestOpp") {
-    const p = getNearestOppositePoint(self);
-    if (p) centerPoint = p;
-  }
-
-  if (preset.center === "centroidOpp") {
-    const p = getNearestOppositeFromSameColorCentroid(self);
-    if (p) centerPoint = p;
-  }
-
-  // ▼ shape に応じて描画（STEP2 では params 化に対応）
-  switch (preset.shape) {
-    case "sector":
-      drawSector(centerPoint, preset, scale);
-      break;
-
-    case "ringSector":
-      drawRingSector(centerPoint, preset, scale);
-      break;
-
-    case "rect":
-      // rectFromSelf / rectCentroidOpp を統合済
-      if (preset.params.mode === "fromSelf") {
-        drawRectFromSelf(centerPoint, preset, scale);
-      } else {
-        drawRectCentroidOpp(centerPoint, preset, scale);
-      }
-      break;
-
-    case "hibikiEX":
-      drawHibikiEXRange();
-      break;
-      
-    case "marinaEX":
-      drawMarinaEX(centerPoint, preset, scale);
-      break;
-
-    case "ioriEX":
-      drawIoriEX(centerPoint, preset, scale);
-      break;
-      
-    default:
-      drawSector(centerPoint, preset, scale);
-      break;
-  }
+  drawShape(preset.shape, {
+    cx,
+    cy,
+    directionRad: direction,
+    color: getLightColorByBase(),
+    ...p
+  });
 }
 
 /* =========================
