@@ -75,7 +75,6 @@
       background: #f0f0f0;
     }
 
-    /* 範囲確認 UI */
     #rangeControls {
       display: none;
       margin-top: 6px;
@@ -93,7 +92,6 @@
   <div class="container">
     <div class="left-panel">
 
-      <!-- ボタン -->
       <div class="controls">
         <button id="btnColor">現在：赤 → 青に切り替え</button>
         <button id="btnReset">リセット</button>
@@ -108,7 +106,6 @@
         </select>
       </div>
 
-      <!-- 範囲確認 UI -->
       <div id="rangeControls">
         <div>
           半径(m)：
@@ -169,8 +166,7 @@
       </div>
 
     </div>
-
-    <!-- 座標表 -->
+    
     <div class="right-panel">
       <div class="table-title">赤点座標</div>
       <table>
@@ -785,19 +781,23 @@ function drawRangeAttack() {
   if (!self) return;
 
   const key = shortcutSelect.value;
-  let preset = rangePresets[key] || { shape: "sector", center: "self" };
+  let preset = rangePresets[key] || { shape: "sector", center: "self", params:{ radius:700, angleDeg:360 } };
 
+  // ▼ manual モード（STEP2 対応済）
   if (key === "manual") {
     preset = {
       shape: "sector",
-      radius: Number(radiusSlider.value),
-      angle: Number(angleInput.value),
-      center: "self"
+      center: "self",
+      params: {
+        radius: Number(radiusSlider.value),
+        angleDeg: Number(angleInput.value)
+      }
     };
   }
 
   const scale = 129 / 350;
 
+  // ▼ 中心点の決定（STEP2 ではまだこのまま）
   let centerPoint = self;
 
   if (preset.center === "nearestOpp") {
@@ -810,6 +810,7 @@ function drawRangeAttack() {
     if (p) centerPoint = p;
   }
 
+  // ▼ shape に応じて描画（STEP2 では params 化に対応）
   switch (preset.shape) {
     case "sector":
       drawSector(centerPoint, preset, scale);
@@ -819,12 +820,13 @@ function drawRangeAttack() {
       drawRingSector(centerPoint, preset, scale);
       break;
 
-    case "rectCentroidOpp":
-      drawRectCentroidOpp(centerPoint, preset, scale);
-      break;
-
-    case "rectFromSelf":
-      drawRectFromSelf(centerPoint, preset, scale);
+    case "rect":
+      // rectFromSelf / rectCentroidOpp を統合済
+      if (preset.params.mode === "fromSelf") {
+        drawRectFromSelf(centerPoint, preset, scale);
+      } else {
+        drawRectCentroidOpp(centerPoint, preset, scale);
+      }
       break;
 
     case "hibikiEX":
@@ -845,71 +847,80 @@ function drawRangeAttack() {
   }
 }
 
+/* =========================
+   各描画関数（params 化対応済）
+========================= */
+
 function drawSector(centerPoint, preset, scale) {
   const self = getBaseSelf();
   if (!self) return;
 
   const { center, angle } = getSkillCenterAndAngle(self, preset);
-
-  const radius = preset.radius * scale;
-  const angleDeg = preset.angle;
-  const angleRad = angleDeg * Math.PI / 180;
-
   const { cx, cy } = logicalToCanvas(center.x, center.y);
-  const color = getLightColorByBase();
 
-  ctx.save();
-  ctx.fillStyle = color;
-
-  if (angleDeg >= 360) {
-    ctx.beginPath();
-    ctx.arc(cx, cy, radius, 0, Math.PI * 2);
-    ctx.fill();
-  } else {
-    const start = angle - angleRad / 2;
-    const end   = angle + angleRad / 2;
-
-    ctx.beginPath();
-    ctx.moveTo(cx, cy);
-    ctx.arc(cx, cy, radius, start, end);
-    ctx.closePath();
-    ctx.fill();
-  }
-
-  ctx.restore();
+  drawShape("sector", {
+    cx,
+    cy,
+    radius: preset.params.radius * scale,
+    angleDeg: preset.params.angleDeg,
+    directionRad: angle,
+    color: getLightColorByBase()
+  });
 }
-
+  
 function drawRingSector(centerPoint, preset, scale) {
   const self = getBaseSelf();
   if (!self) return;
 
-  // 扇形と同じロジックで「中心」と「向き」を取得
-  const { center, angle: centerAngle } = getSkillCenterAndAngle(self, preset);
-
-  const outer = preset.outer * scale;
-  const inner = preset.inner * scale;
-  const angleDeg = preset.angle;
-
+  const { center, angle } = getSkillCenterAndAngle(self, preset);
   const { cx, cy } = logicalToCanvas(center.x, center.y);
-  const color = getLightColorByBase();
 
-  fillAnnularSector(cx, cy, inner, outer, angleDeg, centerAngle, color);
+  drawShape("ringSector", {
+    cx,
+    cy,
+    inner: preset.params.inner * scale,
+    outer: preset.params.outer * scale,
+    angleDeg: preset.params.angleDeg,
+    directionRad: angle,
+    color: getLightColorByBase()
+  });
 }
-
+  
 function drawRectCentroidOpp(centerPoint, preset, scale) {
-  const w = preset.width * scale;
-  const h = preset.height * scale;
-
   const same = getPointsByColor(basePoint.color);
   const centroid = computeCentroid(same);
   if (!centroid) return;
 
   const angle = Math.atan2(-(centerPoint.y - centroid.y), centerPoint.x - centroid.x);
-
   const { cx, cy } = logicalToCanvas(centerPoint.x, centerPoint.y);
-  const color = getLightColorByBase();
 
-  drawRotatedRect(cx, cy, w, h, angle, color, "center");
+  drawShape("rect", {
+    cx,
+    cy,
+    w: preset.params.width * scale,
+    h: preset.params.height * scale,
+    angleRad: angle,
+    color: getLightColorByBase(),
+    mode: preset.params.mode
+  });
+}
+
+function drawRectFromSelf(centerPoint, preset, scale) {
+  const self = getBaseSelf();
+  if (!self) return;
+
+  const { center, angle } = getSkillCenterAndAngle(self, preset);
+  const { cx, cy } = logicalToCanvas(self.x, self.y);
+
+  drawShape("rect", {
+    cx,
+    cy,
+    w: preset.params.width * scale,
+    h: preset.params.height * scale,
+    angleRad: angle,
+    color: getLightColorByBase(),
+    mode: preset.params.mode
+  });
 }
 
 function drawHibikiEXRange() {
@@ -926,9 +937,11 @@ function drawHibikiEXRange() {
 
   const angle = Math.atan2(nearestEnemy.y - baseCenter.y, nearestEnemy.x - baseCenter.x);
 
-  ctx.fillStyle = getLightColorByBase();
-
-  drawHibikiEX(nearestEnemy, angle * 180 / Math.PI);
+  drawShape("hibikiEX", {
+    center: nearestEnemy,
+    angleDeg: angle * 180 / Math.PI,
+    color: getLightColorByBase()
+  });
 }
   
 function drawMarinaEX(centerPoint, preset, scale) {
@@ -939,23 +952,23 @@ function drawMarinaEX(centerPoint, preset, scale) {
   if (!target) return;
 
   const baseAngle = Math.atan2(-(target.y - self.y), target.x - self.x);
-
-  // 反対方向に 550 進む
   const oppositeAngle = baseAngle + Math.PI;
-  const offset = 550 * scale;
 
+  const offset = preset.params.offset * scale;
   const centerX = self.x + Math.cos(oppositeAngle) * offset;
   const centerY = self.y - Math.sin(oppositeAngle) * offset;
 
   const { cx, cy } = logicalToCanvas(centerX, centerY);
-  const color = getLightColorByBase();
 
-  // 固定値
-  const outer = 1000 * scale;
-  const inner = 500 * scale;
-  const angleDeg = 50;
-
-  fillAnnularSector(cx, cy, inner, outer, angleDeg, baseAngle, color);
+  drawShape("marinaEX", {
+    cx,
+    cy,
+    inner: preset.params.inner * scale,
+    outer: preset.params.outer * scale,
+    angleDeg: preset.params.angleDeg,
+    directionRad: baseAngle,
+    color: getLightColorByBase()
+  });
 }
   
 function drawIoriEX(centerPoint, preset, scale) {
@@ -966,47 +979,18 @@ function drawIoriEX(centerPoint, preset, scale) {
   if (!target) return;
 
   const { cx, cy } = logicalToCanvas(target.x, target.y);
-  const color = getLightColorByBase();
-
   const angle = Math.atan2(-(target.y - self.y), target.x - self.x);
 
-  // Iori 固定値
-  const radius = 250 * scale;
-  const angleDeg = 60;
-
-  // 共通扇形描画
-  const angleRad = angleDeg * Math.PI / 180;
-  const start = angle - angleRad / 2;
-  const end   = angle + angleRad / 2;
-
-  ctx.save();
-  ctx.fillStyle = color;
-  ctx.beginPath();
-  ctx.moveTo(cx, cy);
-  ctx.arc(cx, cy, radius, start, end);
-  ctx.closePath();
-  ctx.fill();
-  ctx.restore();
-}
-  
-function drawRectFromSelf(centerPoint, preset, scale) {
-  const self = getBaseSelf();
-  if (!self) return;
-
-  const { center, angle } = getSkillCenterAndAngle(self, preset);
-
-  const w = preset.width * scale;
-  const h = preset.height * scale;
-
-  const { cx, cy } = logicalToCanvas(self.x, self.y);
-  const color = getLightColorByBase();
-
-  drawRotatedRect(cx, cy, w, h, angle, color, "fromSelf");
+  drawShape("ioriEX", {
+    cx,
+    cy,
+    radius: preset.params.radius * scale,
+    angleDeg: preset.params.angleDeg,
+    directionRad: angle,
+    color: getLightColorByBase()
+  });
 }
 
-/* =========================
-   サブ機能
-========================= */
 function applyAttackSP() {
   const redC = computeCentroid(redPoints);
   const blueC = computeCentroid(bluePoints);
