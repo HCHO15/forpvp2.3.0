@@ -75,6 +75,7 @@
       background: #f0f0f0;
     }
 
+    /* 範囲確認 UI */
     #rangeControls {
       display: none;
       margin-top: 6px;
@@ -92,6 +93,7 @@
   <div class="container">
     <div class="left-panel">
 
+      <!-- ボタン -->
       <div class="controls">
         <button id="btnColor">現在：赤 → 青に切り替え</button>
         <button id="btnReset">リセット</button>
@@ -106,6 +108,7 @@
         </select>
       </div>
 
+      <!-- 範囲確認 UI -->
       <div id="rangeControls">
         <div>
           半径(m)：
@@ -166,7 +169,8 @@
       </div>
 
     </div>
-    
+
+    <!-- 座標表 -->
     <div class="right-panel">
       <div class="table-title">赤点座標</div>
       <table>
@@ -350,6 +354,540 @@ function getLightColorByBase() {
 
 function getLightColorByColor(color) {
   return color === "red" ? COLOR_RED_LIGHT : COLOR_BLUE_LIGHT;
+}
+
+/* =========================
+   範囲描画の共通ヘルパー
+========================= */
+
+// ▼ スキル中心点と向きを決める共通関数
+function getSkillCenterAndAngle(self, preset) {
+  let center = self;
+
+  if (preset.center === "nearestOpp") {
+    const p = getNearestOppositePoint(self);
+    if (p) center = p;
+  }
+
+  if (preset.center === "centroidOpp") {
+    const p = getNearestOppositeFromSameColorCentroid(self);
+    if (p) center = p;
+  }
+
+  // ★ center が self のときは「最も近い異色点方向」を向きにする
+  let angle;
+  if (center === self) {
+    angle = getSectorDirection(self, self.color);
+  } else {
+    angle = Math.atan2(-(center.y - self.y), center.x - self.x);
+  }
+
+  return { center, angle };
+}
+
+/* 背景画像 */
+const bgImage = new Image();
+bgImage.src = "S10 map.png";
+let bgLoaded = false;
+bgImage.onload = () => { bgLoaded = true; redraw(); };
+
+const bgImage2 = new Image();
+bgImage2.src = "S10 map 遮蔽.png";
+let bg2Loaded = false;
+bgImage2.onload = () => { bg2Loaded = true; redraw(); };
+
+/* =========================
+   座標変換
+========================= */
+function logicalToCanvas(x, y) {
+  return { cx: originX + x, cy: originY - y };
+}
+function canvasToLogical(cx, cy) {
+  return { x: cx - originX, y: originY - cy };
+}
+
+/* =========================
+   テーブル生成
+========================= */
+function initTables() {
+  for (let i = 1; i <= MAX_POINTS; i++) {
+    const redRow = document.createElement("tr");
+    redRow.innerHTML = `
+      <td>${i}</td>
+      <td><input class="coord-input" data-color="red" data-id="${i}" data-axis="x"></td>
+      <td><input class="coord-input" data-color="red" data-id="${i}" data-axis="y"></td>
+      <td><input type="radio" name="redBase" data-color="red" data-id="${i}"></td>
+    `;
+    redTableBody.appendChild(redRow);
+
+    const blueRow = document.createElement("tr");
+    blueRow.innerHTML = `
+      <td>${i}</td>
+      <td><input class="coord-input" data-color="blue" data-id="${i}" data-axis="x"></td>
+      <td><input class="coord-input" data-color="blue" data-id="${i}" data-axis="y"></td>
+      <td><input type="radio" name="blueBase" data-color="blue" data-id="${i}"></td>
+    `;
+    blueTableBody.appendChild(blueRow);
+  }
+
+  document.querySelectorAll(".coord-input").forEach(input =>
+    input.addEventListener("change", onCoordInputChange)
+  );
+
+  document.querySelectorAll("input[type=radio]").forEach(r =>
+    r.addEventListener("change", onBaseSelect)
+  );
+}
+
+function onBaseSelect(e) {
+  const color = e.target.dataset.color;
+  const id = parseInt(e.target.dataset.id, 10);
+  basePoint = { color, id };
+  redraw();
+}
+
+function onCoordInputChange(e) {
+  const input = e.target;
+  const color = input.dataset.color;
+  const id = parseInt(input.dataset.id, 10);
+  const axis = input.dataset.axis;
+  const value = parseFloat(input.value);
+  if (isNaN(value)) return;
+
+  let arr = color === "red" ? redPoints : bluePoints;
+  let p = arr.find(pt => pt.id === id);
+
+  if (!p) {
+    if (arr.length >= MAX_POINTS) {
+      updateTablesFromPoints();
+      return;
+    }
+    p = { id, color, x: 0, y: 0 };
+    arr.push(p);
+  }
+
+  p[axis] = value;
+  redraw();
+  updateTablesFromPoints();
+  updateCounts();
+}
+
+function updateTablesFromPoints() {
+  document.querySelectorAll(".coord-input").forEach(i => i.value = "");
+
+  redPoints.forEach(p => {
+    document.querySelector(`.coord-input[data-color="red"][data-id="${p.id}"][data-axis="x"]`).value = Math.round(p.x);
+    document.querySelector(`.coord-input[data-color="red"][data-id="${p.id}"][data-axis="y"]`).value = Math.round(p.y);
+  });
+
+  bluePoints.forEach(p => {
+    document.querySelector(`.coord-input[data-color="blue"][data-id="${p.id}"][data-axis="x"]`).value = Math.round(p.x);
+    document.querySelector(`.coord-input[data-color="blue"][data-id="${p.id}"][data-axis="y"]`).value = Math.round(p.y);
+  });
+}
+
+/* =========================
+   点操作
+========================= */
+function getNextId(arr) {
+  for (let i = 1; i <= MAX_POINTS; i++) {
+    if (!arr.find(p => p.id === i)) return i;
+  }
+  return null;
+}
+
+function addPoint(color, x, y) {
+  const arr = color === "red" ? redPoints : bluePoints;
+  if (arr.length >= MAX_POINTS) return;
+  const id = getNextId(arr);
+  arr.push({ id, color, x, y });
+}
+
+function removePoint(p) {
+  if (p.color === "red") redPoints = redPoints.filter(x => x !== p);
+  else bluePoints = bluePoints.filter(x => x !== p);
+
+  if (basePoint && basePoint.color === p.color && basePoint.id === p.id) {
+    basePoint = null;
+  }
+}
+
+function findPointAtCanvasPos(cx, cy) {
+  const all = redPoints.concat(bluePoints);
+  for (let i = all.length - 1; i >= 0; i--) {
+    const p = all[i];
+    const { cx: px, cy: py } = logicalToCanvas(p.x, p.y);
+    const dx = cx - px;
+    const dy = cy - py;
+    if (Math.sqrt(dx * dx + dy * dy) <= HIT_RADIUS) return p;
+  }
+  return null;
+}
+
+/* =========================
+   描画ユーティリティ
+========================= */
+function drawCircle(cx, cy, r, color) {
+  ctx.save();
+  ctx.strokeStyle = color;
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.arc(cx, cy, r, 0, Math.PI * 2);
+  ctx.stroke();
+  ctx.restore();
+}
+
+function drawCross(cx, cy, color) {
+  ctx.save();
+  ctx.strokeStyle = color;
+  ctx.lineWidth = 2;
+  const s = 10;
+  ctx.beginPath();
+  ctx.moveTo(cx - s, cy - s);
+  ctx.lineTo(cx + s, cy + s);
+  ctx.moveTo(cx - s, cy + s);
+  ctx.lineTo(cx + s, cy - s);
+  ctx.stroke();
+  ctx.restore();
+}
+
+/* =========================
+   重心
+========================= */
+function computeCentroid(arr) {
+  if (!arr.length) return null;
+  let sx = 0, sy = 0;
+  arr.forEach(p => { sx += p.x; sy += p.y; });
+  return { x: sx / arr.length, y: sy / arr.length };
+}
+
+/* =========================
+   背景描画
+========================= */
+function clearCanvas() {
+  ctx.clearRect(0, 0, width, height);
+
+  if (bgLoaded) {
+    const scale = Math.min(width / 3567, height / 2400) * 1.5;
+    const w = 3567 * scale;
+    const h = 2400 * scale;
+    const x = (width - w) / 2;
+    const y = (height - h) / 2;
+
+    ctx.save();
+    ctx.globalAlpha = 0.8;
+    ctx.drawImage(bgImage, x, y, w, h);
+    ctx.restore();
+  }
+
+  if (bg2Loaded) {
+    const scale = Math.min(width / 3567, height / 2400) * 1.5;
+    const w = 3567 * scale;
+    const h = 2400 * scale;
+    const x = (width - w) / 2;
+    const y = (height - h) / 2;
+
+    ctx.save();
+    ctx.globalAlpha = 0.9;
+    ctx.drawImage(bgImage2, x, y, w, h);
+    ctx.restore();
+  }
+}
+
+/* =========================
+   点描画
+========================= */
+function drawPoint(p) {
+  const { cx, cy } = logicalToCanvas(p.x, p.y);
+  ctx.save();
+  ctx.beginPath();
+  ctx.fillStyle = p.color === "red" ? COLOR_RED : COLOR_BLUE;
+  ctx.arc(cx, cy, POINT_RADIUS, 0, Math.PI * 2);
+  ctx.fill();
+
+  ctx.fillStyle = "#fff";
+  ctx.font = "bold 12px system-ui";
+  ctx.textAlign = "center";
+  ctx.textBaseline = "middle";
+  ctx.fillText(p.id, cx, cy);
+  ctx.restore();
+}
+
+/* =========================
+   距離計算
+========================= */
+function dist2(a, b) {
+  const dx = a.x - b.x;
+  const dy = a.y - b.y;
+  return dx * dx + dy * dy;
+}
+
+function findNearest(from, arr) {
+  if (!arr.length) return null;
+  let best = null;
+  let bestD = Infinity;
+  arr.forEach(p => {
+    const d = dist2(from, p);
+    if (d < bestD) {
+      bestD = d;
+      best = p;
+    }
+  });
+  return best;
+}
+
+function drawHighlightCircle(point, color) {
+  if (!point) return;
+  const { cx, cy } = logicalToCanvas(point.x, point.y);
+
+  ctx.save();
+  ctx.strokeStyle = color;
+  ctx.lineWidth = 3;
+  ctx.beginPath();
+  ctx.arc(cx, cy, POINT_RADIUS + 5, 0, Math.PI * 2);
+  ctx.stroke();
+  ctx.restore();
+}
+
+function drawCentroidMark(arr, colorLight) {
+  const c = computeCentroid(arr);
+  if (!c) return;
+  const { cx, cy } = logicalToCanvas(c.x, c.y);
+  drawCross(cx, cy, colorLight);
+}
+
+function getSectorDirection(base, color) {
+  const others = color === "red" ? bluePoints : redPoints;
+
+  if (others.length === 0) {
+    return (base.x <= 0) ? 0 : Math.PI;
+  }
+
+  let nearest = null;
+  let bestDist = Infinity;
+
+  others.forEach(p => {
+    const dx = p.x - base.x;
+    const dy = p.y - base.y;
+    const d2 = dx * dx + dy * dy;
+    if (d2 < bestDist) {
+      bestDist = d2;
+      nearest = p;
+    }
+  });
+
+  return Math.atan2(-(nearest.y - base.y), nearest.x - base.x);
+}
+  
+// ★★★ STEP3 反映済み rangePresets（ここだけ差し替え）★★★
+const rangePresets = {
+  // ---- 円形・扇形系（sector）----
+  yuzuEX:        { shape: "sector", center: "nearestOpp", params: { radius: 200, angleDeg: 360 } },
+  yuzuNS:        { shape: "sector", center: "self",       params: { radius: 100, angleDeg: 360 } },
+  atsukoEX:      { shape: "sector", center: "self",       params: { radius: 500, angleDeg: 360 } },
+  atsukoNS:      { shape: "sector", center: "self",       params: { radius: 150, angleDeg: 360 } },
+  koharuMizugiEX:{ shape: "sector", center: "nearestOpp", params: { radius: 250, angleDeg: 360 } },
+  sakiEX:        { shape: "sector", center: "centroidOpp",params: { radius: 100, angleDeg: 360 } },
+  sumireEX:      { shape: "sector", center: "self",       params: { radius: 400, angleDeg: 45  } },
+  cherinoEX:     { shape: "sector", center: "self",       params: { radius: 1000,angleDeg: 360 } },
+  nagisaEX:      { shape: "sector", center: "centroidOpp",params: { radius: 250, angleDeg: 360 } },
+  nonomiEX:      { shape: "sector", center: "self",       params: { radius: 950, angleDeg: 60  } },
+  hinaMizugiEX:  { shape: "sector", center: "self",       params: { radius: 950, angleDeg: 90  } },
+  minoriEX:      { shape: "sector", center: "centroidOpp",params: { radius: 300, angleDeg: 360 } },
+  minoriNS:      { shape: "sector", center: "centroidOpp",params: { radius: 300, angleDeg: 360 } },
+  reisaEX:       { shape: "sector", center: "self",       params: { radius: 700, angleDeg: 90  } },
+  tsubakiEX:     { shape: "sector", center: "self",       params: { radius: 700, angleDeg: 360 } },
+  hanakoMizugiEX:{ shape: "sector", center: "self",       params: { radius: 850, angleDeg: 60  } },
+  hoshinoRinsenEX:{shape: "sector", center: "nearestOpp", params: { radius: 300, angleDeg: 360 } },
+  hoshinoRinsenSS:{shape: "sector", center: "self",       params: { radius: 850, angleDeg: 30  } },
+  hasumiMizugiEX:{ shape: "sector", center: "self",       params: { radius: 1150,angleDeg: 45  } },
+  yakumoEX:      { shape: "sector", center: "centroidOpp",params: { radius: 510, angleDeg: 360 } },
+
+  // ---- 長方形系（rect）----
+  junkoEX:       { shape: "rect", center: "nearestOpp", params: { width: 900,  height: 150, mode: "fromSelf" } },
+  mutsukiNewyearNS: { shape: "rect", center: "nearestOpp", params: { width: 950,  height: 150, mode: "fromSelf" } },
+  shirokoRidingNS: { shape: "rect", center: "nearestOpp", params: { width: 850,  height: 100, mode: "fromSelf" } },
+  aliceEX:       { shape: "rect", center: "nearestOpp", params: { width: 2000, height: 200, mode: "fromSelf" } },
+  aliceRinsenEX: { shape: "rect", center: "nearestOpp", params: { width: 1450, height: 200, mode: "fromSelf" } },
+  hinaDressEX1:  { shape: "rect", center: "nearestOpp", params: { width: 2000, height: 40,  mode: "fromSelf" } },
+  hinaDressEX3:  { shape: "rect", center: "nearestOpp", params: { width: 2000, height: 60,  mode: "fromSelf" } },
+  tokiEX12:      { shape: "rect", center: "nearestOpp", params: { width: 850,  height: 50,  mode: "fromSelf" } },
+  tokiEX3:       { shape: "rect", center: "nearestOpp", params: { width: 1400, height: 200, mode: "fromSelf" } },
+  hiyoriMizugiEX:{ shape: "rect", center: "nearestOpp", params: { width: 1000, height: 50,  mode: "fromSelf" } },
+  sayaCasualEX:  { shape: "rect", center: "centroidOpp",params: { width: 200,  height: 800, mode: "center"   } },
+
+  // ---- 特殊形状 ----
+  hibikiEX:      { shape: "hibikiEX", center: "nearestOpp" },
+
+  ioriEX:        { shape: "ioriEX", center: "nearestOpp",
+                   params: { radius: 250, angleDeg: 60 } },
+
+  marinaEX:      { shape: "marinaEX", center: "nearestOpp",
+                   params: { inner: 500, outer: 1000, angleDeg: 50, offset: 550 } },
+
+  mutsukiNewyearEX: {
+    shape: "ringSector",
+    center: "self",
+    params: { inner: 550, outer: 1100, angleDeg: 90 }
+  }
+};
+
+function getNearestOppositePoint(self) {
+  const others = getOppositePointsByColor(self.color);
+  if (!others.length) return null;
+  return findNearest(self, others);
+}
+
+function getNearestOppositeFromSameColorCentroid(self) {
+  const same = getPointsByColor(self.color);
+  const others = getOppositePointsByColor(self.color);
+
+  const c = computeCentroid(same);
+  if (!c || !others.length) return null;
+
+  return findNearest(c, others);
+}
+
+/* =========================
+   範囲描画ユーティリティ
+========================= */
+function fillAnnularSector(cx, cy, innerR, outerR, angleDeg, directionRad, color) {
+  const angleRad = angleDeg * Math.PI / 180;
+  const start = directionRad - angleRad / 2;
+  const end   = directionRad + angleRad / 2;
+
+  ctx.save();
+  ctx.fillStyle = color;
+
+  ctx.beginPath();
+  ctx.arc(cx, cy, outerR, start, end, false);
+  ctx.arc(cx, cy, innerR, end, start, true);
+  ctx.closePath();
+  ctx.fill();
+
+  ctx.restore();
+}
+
+// 汎用：回転長方形を描く
+// cx, cy = 中心座標（キャンバス座標）
+// w, h = 幅・高さ
+// angleRad = 回転角度（ラジアン）
+// mode = "center" | "fromSelf"
+function drawRotatedRect(cx, cy, w, h, angleRad, color, mode = "center") {
+  ctx.save();
+  ctx.translate(cx, cy);
+  ctx.rotate(angleRad);
+  ctx.fillStyle = color;
+
+  if (mode === "center") {
+    // 中心基準
+    ctx.fillRect(-w / 2, -h / 2, w, h);
+  } else {
+    // 左端中央基準（self → 敵方向に伸びるタイプ）
+    ctx.fillRect(0, -h / 2, w, h);
+  }
+
+  ctx.restore();
+}
+
+function drawShape(shape, params) {
+  switch (shape) {
+    case "sector":
+      drawSectorRaw(params);
+      break;
+
+    case "ringSector":
+      drawRingSectorRaw(params);
+      break;
+
+    case "rect":
+      drawRotatedRect(params.cx, params.cy, params.w, params.h, params.angleRad, params.color, params.mode);
+      break;
+
+    case "ioriEX":
+      drawIoriEXRaw(params);
+      break;
+
+    case "marinaEX":
+      drawMarinaEXRaw(params);
+      break;
+
+    case "hibikiEX":
+      drawHibikiEX(params.center, params.angleDeg);
+      break;
+  }
+}
+
+function drawSectorRaw({ cx, cy, radius, angleDeg, directionRad, color }) {
+  const angleRad = angleDeg * Math.PI / 180;
+  const start = directionRad - angleRad / 2;
+  const end   = directionRad + angleRad / 2;
+
+  ctx.save();
+  ctx.fillStyle = color;
+
+  if (angleDeg >= 360) {
+    ctx.beginPath();
+    ctx.arc(cx, cy, radius, 0, Math.PI * 2);
+    ctx.fill();
+  } else {
+    ctx.beginPath();
+    ctx.moveTo(cx, cy);
+    ctx.arc(cx, cy, radius, start, end);
+    ctx.closePath();
+    ctx.fill();
+  }
+
+  ctx.restore();
+}
+
+function drawRingSectorRaw({ cx, cy, inner, outer, angleDeg, directionRad, color }) {
+  const angleRad = angleDeg * Math.PI / 180;
+  const start = directionRad - angleRad / 2;
+  const end   = directionRad + angleRad / 2;
+
+  ctx.save();
+  ctx.fillStyle = color;
+
+  ctx.beginPath();
+  ctx.arc(cx, cy, outer, start, end, false);
+  ctx.arc(cx, cy, inner, end, start, true);
+  ctx.closePath();
+  ctx.fill();
+
+  ctx.restore();
+}
+
+function drawIoriEXRaw({ cx, cy, radius, angleDeg, directionRad, color }) {
+  const angleRad = angleDeg * Math.PI / 180;
+  const start = directionRad - angleRad / 2;
+  const end   = directionRad + angleRad / 2;
+
+  ctx.save();
+  ctx.fillStyle = color;
+  ctx.beginPath();
+  ctx.moveTo(cx, cy);
+  ctx.arc(cx, cy, radius, start, end);
+  ctx.closePath();
+  ctx.fill();
+  ctx.restore();
+}
+
+function drawMarinaEXRaw({ cx, cy, inner, outer, angleDeg, directionRad, color }) {
+  const angleRad = angleDeg * Math.PI / 180;
+  const start = directionRad - angleRad / 2;
+  const end   = directionRad + angleRad / 2;
+
+  ctx.save();
+  ctx.fillStyle = color;
+
+  ctx.beginPath();
+  ctx.arc(cx, cy, outer, start, end, false);
+  ctx.arc(cx, cy, inner, end, start, true);
+  ctx.closePath();
+  ctx.fill();
+
+  ctx.restore();
 }
 
 /* =========================
