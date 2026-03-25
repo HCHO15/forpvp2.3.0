@@ -731,8 +731,12 @@ function drawRotatedRect(cx, cy, w, h, angleRad, color, mode = "center") {
 
 function drawSectorRaw({ cx, cy, radius, angleDeg, directionRad, color }) {
   const angleRad = angleDeg * Math.PI / 180;
-  const start = directionRad - angleRad / 2;
-  const end   = directionRad + angleRad / 2;
+
+  // ★ Canvas は y下向きなので、描画時だけ角度を反転
+  const canvasDir = -directionRad;
+
+  const start = canvasDir - angleRad / 2;
+  const end   = canvasDir + angleRad / 2;
 
   ctx.save();
   ctx.fillStyle = color;
@@ -753,7 +757,24 @@ function drawSectorRaw({ cx, cy, radius, angleDeg, directionRad, color }) {
 }
 
 function drawRingSectorRaw({ cx, cy, inner, outer, angleDeg, directionRad, color }) {
-  fillAnnularSector(cx, cy, inner, outer, angleDeg, directionRad, color);
+  const angleRad = angleDeg * Math.PI / 180;
+
+  // ★ Canvas の y軸反転に合わせて角度を反転
+  const canvasDir = -directionRad;
+
+  const start = canvasDir - angleRad / 2;
+  const end   = canvasDir + angleRad / 2;
+
+  ctx.save();
+  ctx.fillStyle = color;
+
+  ctx.beginPath();
+  ctx.arc(cx, cy, outer, start, end, false);
+  ctx.arc(cx, cy, inner, end, start, true);
+  ctx.closePath();
+  ctx.fill();
+
+  ctx.restore();
 }
 
 function drawHibikiEX(centerB, angleDeg, color) {
