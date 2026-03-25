@@ -672,8 +672,8 @@ const rangePresets = {
   ioriEX:        { shape: "sector", center: "nearestOpp",
                    params: { radius: 250, angleDeg: 60 } },
 
-  marinaEX:      { shape: "ringSector", center: "nearestOpp",
-                   params: { inner: 500, outer: 1000, angleDeg: 50 } },
+  marinaEX:      { shape: "marinaEX", center: "nearestOpp",
+                   params: { inner: 500, outer: 1000, angleDeg: 50, offset: 550 } },
 
   reisaMagicEX:  { shape: "sector", center: "self",
                    params: { radius: 700, angleDeg: 120 } }
@@ -733,6 +733,8 @@ function scaledParams(params, scale) {
   if (out.inner)  out.inner  *= scale;
   if (out.width)  out.width *= scale;
   if (out.height) out.height *= scale;
+  if (out.offset) out.offset *= scale;
+  if (params.mode) out.mode = params.mode;
   return out;
 }
 
@@ -765,12 +767,6 @@ function drawShape(shape, params) {
     case "hibikiEX":
       drawHibikiEX(params.center, params.angleDeg, params.color);
       break;
-    case "ioriEX":
-      drawSectorRaw(params);
-      break;
-    case "marinaEX":
-      drawRingSectorRaw(params);
-      break;
   }
 }
 
@@ -801,6 +797,30 @@ function drawRingSectorRaw({ cx, cy, inner, outer, angleDeg, directionRad, color
   fillAnnularSector(cx, cy, inner, outer, angleDeg, directionRad, color);
 }
 
+function drawMarinaEX(self, preset, scale) {
+  const target = getNearestOppositePoint(self);
+  if (!target) return;
+
+  const baseAngle = Math.atan2(-(target.y - self.y), target.x - self.x);
+  const oppositeAngle = baseAngle + Math.PI;
+
+  const offset = preset.params.offset * scale;
+  const centerX = self.x + Math.cos(oppositeAngle) * offset;
+  const centerY = self.y - Math.sin(oppositeAngle) * offset;
+
+  const { cx, cy } = logicalToCanvas(centerX, centerY);
+
+  drawRingSectorRaw({
+    cx,
+    cy,
+    inner: preset.params.inner * scale,
+    outer: preset.params.outer * scale,
+    angleDeg: preset.params.angleDeg,
+    directionRad: baseAngle,
+    color: getLightColorByBase()
+  });
+}
+
 function drawRangeAttack() {
   if (!basePoint) return;
 
@@ -810,8 +830,9 @@ function drawRangeAttack() {
   const key = shortcutSelect.value;
   let preset = rangePresets[key];
 
+  const scale = 129 / 350;
+
   if (key === "manual" || !preset) {
-    const scale = 129 / 350;
     const center = self;
     const direction = getSectorDirection(self, self.color);
     const { cx, cy } = logicalToCanvas(center.x, center.y);
@@ -829,7 +850,23 @@ function drawRangeAttack() {
     return;
   }
 
-  const scale = 129 / 350;
+  if (preset.shape === "hibikiEX") {
+    const center = resolveCenter(self, preset.center);
+    const direction = resolveDirection(self, center, preset.center);
+    const angleDeg = direction * 180 / Math.PI;
+
+    drawShape("hibikiEX", {
+      center,
+      angleDeg,
+      color: getLightColorByBase()
+    });
+    return;
+  }
+
+  if (preset.shape === "marinaEX") {
+    drawMarinaEX(self, preset, scale);
+    return;
+  }
 
   const center = resolveCenter(self, preset.center);
   const direction = resolveDirection(self, center, preset.center);
@@ -841,8 +878,7 @@ function drawRangeAttack() {
     cy,
     directionRad: direction,
     color: getLightColorByBase(),
-    ...p,
-    center
+    ...p
   });
 }
 
