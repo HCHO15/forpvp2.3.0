@@ -918,12 +918,22 @@ function drawRangeAttack() {
 
       drawRotatedRect(cx, cy, p.width, p.height, angle, getLightColorByBase(), "fromSelf");
     } else {
-      const center = resolveCenter(self, preset.center);
-      const angle = resolveDirection(self, center, preset.center);
-      const { cx, cy } = logicalToCanvas(center.x, center.y);
+    const center = resolveCenter(self, preset.center);
 
-      drawRotatedRect(cx, cy, p.width, p.height, angle, getLightColorByBase(), "center");
+    let angle;
+    if (key === "sayaCasualEX") {
+        // ★ サヤ（私服）EXだけは部隊重心 → 異色点 の向き
+        const same = getPointsByColor(basePoint.color);
+        const baseCenter = computeCentroid(same);
+        angle = Math.atan2(center.y - baseCenter.y, center.x - baseCenter.x);
+    } else {
+        // 通常の直線系
+        angle = resolveDirection(self, center, preset.center);
     }
+
+    const { cx, cy } = logicalToCanvas(center.x, center.y);
+    drawRotatedRect(cx, cy, p.width, p.height, angle, getLightColorByBase(), "center");
+}
     return;
   }
 
