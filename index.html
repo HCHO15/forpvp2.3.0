@@ -717,7 +717,10 @@ function scaledParams(params, scale) {
 function drawRotatedRect(cx, cy, w, h, angleRad, color, mode = "center") {
   ctx.save();
   ctx.translate(cx, cy);
-  ctx.rotate(angleRad);
+
+  // ★ Canvas の y軸反転に合わせて角度を反転
+  ctx.rotate(-angleRad);
+
   ctx.fillStyle = color;
 
   if (mode === "center") {
@@ -888,7 +891,7 @@ function drawRangeAttack() {
     const oppositeAngle = baseAngle + Math.PI;
 
     const centerX = self.x + Math.cos(oppositeAngle) * p.offset;
-    const centerY = self.y - Math.sin(oppositeAngle) * p.offset;
+    const centerY = self.y + Math.sin(oppositeAngle) * p.offset;
     const { cx, cy } = logicalToCanvas(centerX, centerY);
 
     drawRingSectorRaw({
