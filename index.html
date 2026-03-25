@@ -838,8 +838,7 @@ function drawRangeAttack() {
     return;
   }
 
-  // ヒビキEX：点A→点Bの向きを
-  // 「基準点部隊重心 → 基準点部隊重心に最も近い異色点」の向きに合わせる
+    // ヒビキEX：最も近い異色点 → 部隊重心 の向き
   if (key === "hibikiEX") {
     const same = getPointsByColor(basePoint.color);
     const others = getOppositePointsByColor(basePoint.color);
@@ -848,9 +847,10 @@ function drawRangeAttack() {
     const nearestEnemy = findNearest(baseCenter, others);
     if (!nearestEnemy) return;
 
-    // キャンバス系と同じく y を反転して角度を求める
-    const angle = Math.atan2(-(nearestEnemy.y - baseCenter.y), nearestEnemy.x - baseCenter.x);
-    const angleDeg = angle * 180 / Math.PI;
+    // ここを「敵 → 重心」の向きに変更
+    const angleRad = Math.atan2(baseCenter.y - nearestEnemy.y,
+                                baseCenter.x - nearestEnemy.x);
+    const angleDeg = angleRad * 180 / Math.PI;
 
     drawHibikiEX(nearestEnemy, angleDeg, getLightColorByBase());
     return;
