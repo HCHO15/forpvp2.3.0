@@ -605,6 +605,7 @@ function drawCentroidMark(arr, colorLight) {
   drawCross(cx, cy, colorLight);
 }
 
+<script>
 function getSectorDirection(base, color) {
   const others = color === "red" ? bluePoints : redPoints;
 
@@ -734,7 +735,6 @@ function scaledParams(params, scale) {
   if (out.width)  out.width *= scale;
   if (out.height) out.height *= scale;
   if (out.offset) out.offset *= scale;
-  if (params.mode) out.mode = params.mode;
   return out;
 }
 
@@ -751,23 +751,6 @@ function drawRotatedRect(cx, cy, w, h, angleRad, color, mode = "center") {
   }
 
   ctx.restore();
-}
-
-function drawShape(shape, params) {
-  switch (shape) {
-    case "sector":
-      drawSectorRaw(params);
-      break;
-    case "ringSector":
-      drawRingSectorRaw(params);
-      break;
-    case "rect":
-      drawRotatedRect(params.cx, params.cy, params.w, params.h, params.angleRad, params.color, params.mode);
-      break;
-    case "hibikiEX":
-      drawHibikiEX(params.center, params.angleDeg, params.color);
-      break;
-  }
 }
 
 function drawSectorRaw({ cx, cy, radius, angleDeg, directionRad, color }) {
@@ -797,28 +780,56 @@ function drawRingSectorRaw({ cx, cy, inner, outer, angleDeg, directionRad, color
   fillAnnularSector(cx, cy, inner, outer, angleDeg, directionRad, color);
 }
 
-function drawMarinaEX(self, preset, scale) {
-  const target = getNearestOppositePoint(self);
-  if (!target) return;
+function drawHibikiEX(centerB, angleDeg, color) {
+  const scale = 129 / 350;
+  const R = 150 * scale;
 
-  const baseAngle = Math.atan2(-(target.y - self.y), target.x - self.x);
-  const oppositeAngle = baseAngle + Math.PI;
+  const L_AB = 200 * scale;
+  const L_BC = 200 * 1.05 * scale;
+  const L_BE = 200 * 1.14 * scale;
 
-  const offset = preset.params.offset * scale;
-  const centerX = self.x + Math.cos(oppositeAngle) * offset;
-  const centerY = self.y - Math.sin(oppositeAngle) * offset;
+  const A_local = { x: -L_AB, y: 0 };
+  const B_local = { x: 0, y: 0 };
+  const C_local = {
+    x: L_BC * Math.cos(110 * Math.PI / 180),
+    y: L_BC * Math.sin(110 * Math.PI / 180)
+  };
+  const D_local = {
+    x: L_BC * Math.cos(290 * Math.PI / 180),
+    y: L_BC * Math.sin(290 * Math.PI / 180)
+  };
+  const E_local = {
+    x: L_BE * Math.cos(340 * Math.PI / 180),
+    y: L_BE * Math.sin(340 * Math.PI / 180)
+  };
 
-  const { cx, cy } = logicalToCanvas(centerX, centerY);
+  const rad = angleDeg * Math.PI / 180;
+  const cos = Math.cos(rad);
+  const sin = Math.sin(rad);
 
-  drawRingSectorRaw({
-    cx,
-    cy,
-    inner: preset.params.inner * scale,
-    outer: preset.params.outer * scale,
-    angleDeg: preset.params.angleDeg,
-    directionRad: baseAngle,
-    color: getLightColorByBase()
-  });
+  function transform(p) {
+    const x = p.x * cos - p.y * sin;
+    const y = p.x * sin + p.y * cos;
+    return { x: x + centerB.x, y: y + centerB.y };
+  }
+
+  function drawCircleAt(p) {
+    const { cx, cy } = logicalToCanvas(p.x, p.y);
+    ctx.beginPath();
+    ctx.arc(cx, cy, R, 0, Math.PI * 2);
+    ctx.fill();
+  }
+
+  ctx.save();
+  ctx.fillStyle = color;
+
+  drawCircleAt(transform(A_local));
+  drawCircleAt(transform(B_local));
+  drawCircleAt(transform(C_local));
+  drawCircleAt(transform(D_local));
+  drawCircleAt(transform(E_local));
+
+  ctx.restore();
 }
 
 function drawRangeAttack() {
@@ -832,6 +843,7 @@ function drawRangeAttack() {
 
   const scale = 129 / 350;
 
+  // 手動
   if (key === "manual" || !preset) {
     const center = self;
     const direction = getSectorDirection(self, self.color);
@@ -839,7 +851,7 @@ function drawRangeAttack() {
     const radius = Number(radiusSlider.value) * scale;
     const angleDeg = Number(angleInput.value);
 
-    drawShape("sector", {
+    drawSectorRaw({
       cx,
       cy,
       radius,
@@ -850,36 +862,94 @@ function drawRangeAttack() {
     return;
   }
 
-  if (preset.shape === "hibikiEX") {
-    const center = resolveCenter(self, preset.center);
-    const direction = resolveDirection(self, center, preset.center);
-    const angleDeg = direction * 180 / Math.PI;
+  // ヒビキEX：部隊重心→最も近い異色点の向き
+  if (key === "hibikiEX") {
+    const same = getPointsByColor(basePoint.color);
+    const others = getOppositePointsByColor(basePoint.color);
+    const baseCenter = computeCentroid(same);
+    if (!baseCenter || !others.length) return;
+    const nearestEnemy = findNearest(baseCenter, others);
+    if (!nearestEnemy) return;
 
-    drawShape("hibikiEX", {
-      center,
-      angleDeg,
+    const angle = Math.atan2(nearestEnemy.y - baseCenter.y, nearestEnemy.x - baseCenter.x);
+    const angleDeg = angle * 180 / Math.PI;
+
+    drawHibikiEX(nearestEnemy, angleDeg, getLightColorByBase());
+    return;
+  }
+
+  // マリナEX：自分の後方にオフセットしたリング扇形
+  if (key === "marinaEX") {
+    const target = getNearestOppositePoint(self);
+    if (!target) return;
+
+    const p = scaledParams(preset.params, scale);
+    const baseAngle = Math.atan2(-(target.y - self.y), target.x - self.x);
+    const oppositeAngle = baseAngle + Math.PI;
+
+    const centerX = self.x + Math.cos(oppositeAngle) * p.offset;
+    const centerY = self.y - Math.sin(oppositeAngle) * p.offset;
+    const { cx, cy } = logicalToCanvas(centerX, centerY);
+
+    drawRingSectorRaw({
+      cx,
+      cy,
+      inner: p.inner,
+      outer: p.outer,
+      angleDeg: p.angleDeg,
+      directionRad: baseAngle,
       color: getLightColorByBase()
     });
     return;
   }
 
-  if (preset.shape === "marinaEX") {
-    drawMarinaEX(self, preset, scale);
+  // 直線系（rect）
+  if (preset.shape === "rect") {
+    const p = scaledParams(preset.params, scale);
+    const mode = p.mode || "center";
+
+    if (mode === "fromSelf") {
+      const center = resolveCenter(self, preset.center);
+      const angle = resolveDirection(self, center, preset.center);
+      const { cx, cy } = logicalToCanvas(self.x, self.y);
+
+      drawRotatedRect(cx, cy, p.width, p.height, angle, getLightColorByBase(), "fromSelf");
+    } else {
+      const center = resolveCenter(self, preset.center);
+      const angle = resolveDirection(self, center, preset.center);
+      const { cx, cy } = logicalToCanvas(center.x, center.y);
+
+      drawRotatedRect(cx, cy, p.width, p.height, angle, getLightColorByBase(), "center");
+    }
     return;
   }
 
+  // 通常の円形・扇形・リング扇形
   const center = resolveCenter(self, preset.center);
   const direction = resolveDirection(self, center, preset.center);
   const { cx, cy } = logicalToCanvas(center.x, center.y);
   const p = scaledParams(preset.params, scale);
 
-  drawShape(preset.shape, {
-    cx,
-    cy,
-    directionRad: direction,
-    color: getLightColorByBase(),
-    ...p
-  });
+  if (preset.shape === "sector") {
+    drawSectorRaw({
+      cx,
+      cy,
+      radius: p.radius,
+      angleDeg: p.angleDeg,
+      directionRad: direction,
+      color: getLightColorByBase()
+    });
+  } else if (preset.shape === "ringSector") {
+    drawRingSectorRaw({
+      cx,
+      cy,
+      inner: p.inner,
+      outer: p.outer,
+      angleDeg: p.angleDeg,
+      directionRad: direction,
+      color: getLightColorByBase()
+    });
+  }
 }
 
 function applyAttackSP() {
@@ -1112,7 +1182,7 @@ shortcutSelect.addEventListener("change", () => {
     return;
   }
 
-  if (preset.shape === "sector" && preset.params) {
+  if (preset.shape === "sector" && preset.params && preset.params.radius) {
     radiusSlider.value = preset.params.radius;
     angleInput.value = preset.params.angleDeg;
     radiusValue.textContent = preset.params.radius;
@@ -1225,59 +1295,6 @@ document.querySelectorAll(".preset-delete").forEach(btn => {
 });
 
 loadPresets();
-
-function drawHibikiEX(centerB, angleDeg, color) {
-  const scale = 129 / 350;
-  const R = 150 * scale;
-
-  const L_AB = 200 * scale;
-  const L_BC = 200 * 1.05 * scale;
-  const L_BE = 200 * 1.14 * scale;
-
-  const A_local = { x: -L_AB, y: 0 };
-  const B_local = { x: 0, y: 0 };
-  const C_local = {
-    x: L_BC * Math.cos(110 * Math.PI / 180),
-    y: L_BC * Math.sin(110 * Math.PI / 180)
-  };
-  const D_local = {
-    x: L_BC * Math.cos(290 * Math.PI / 180),
-    y: L_BC * Math.sin(290 * Math.PI / 180)
-  };
-  const E_local = {
-    x: L_BE * Math.cos(340 * Math.PI / 180),
-    y: L_BE * Math.sin(340 * Math.PI / 180)
-  };
-
-  const rad = angleDeg * Math.PI / 180;
-  const cos = Math.cos(rad);
-  const sin = Math.sin(rad);
-
-  function transform(p) {
-    const x = p.x * cos - p.y * sin;
-    const y = p.x * sin + p.y * cos;
-    return { x: x + centerB.x, y: y + centerB.y };
-  }
-
-  function drawCircleAt(p) {
-    const { cx, cy } = logicalToCanvas(p.x, p.y);
-    ctx.beginPath();
-    ctx.arc(cx, cy, R, 0, Math.PI * 2);
-    ctx.fill();
-  }
-
-  ctx.save();
-  ctx.fillStyle = color;
-
-  drawCircleAt(transform(A_local));
-  drawCircleAt(transform(B_local));
-  drawCircleAt(transform(C_local));
-  drawCircleAt(transform(D_local));
-  drawCircleAt(transform(E_local));
-
-  ctx.restore();
-}
-
 initTables();
 redraw();
 updateTablesFromPoints();
