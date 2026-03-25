@@ -602,7 +602,7 @@ function getSectorDirection(base, color) {
     }
   });
 
-  return Math.atan2(-(nearest.y - base.y), nearest.x - base.x);
+  return Math.atan2(nearest.y - base.y, nearest.x - base.x);
 }
 
 const rangePresets = {
@@ -700,7 +700,7 @@ function resolveDirection(self, center, centerType) {
   if (centerType === "self") {
     return getSectorDirection(self, self.color);
   }
-  return Math.atan2(-(center.y - self.y), center.x - self.x);
+  return Math.atan2(center.y - self.y, center.x - self.x);
 }
 
 function scaledParams(params, scale) {
@@ -863,7 +863,7 @@ function drawRangeAttack() {
     if (!target) return;
 
     const p = scaledParams(preset.params, scale);
-    const baseAngle = Math.atan2(-(target.y - self.y), target.x - self.x);
+    const baseAngle = Math.atan2(target.y - self.y, target.x - self.x);
     const oppositeAngle = baseAngle + Math.PI;
 
     const centerX = self.x + Math.cos(oppositeAngle) * p.offset;
