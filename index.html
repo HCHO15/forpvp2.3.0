@@ -336,29 +336,6 @@ function getLightColorByColor(color) {
   return color === "red" ? COLOR_RED_LIGHT : COLOR_BLUE_LIGHT;
 }
 
-function getSkillCenterAndAngle(self, preset) {
-  let center = self;
-
-  if (preset.center === "nearestOpp") {
-    const p = getNearestOppositePoint(self);
-    if (p) center = p;
-  }
-
-  if (preset.center === "centroidOpp") {
-    const p = getNearestOppositeFromSameColorCentroid(self);
-    if (p) center = p;
-  }
-
-  let angle;
-  if (center === self) {
-    angle = getSectorDirection(self, self.color);
-  } else {
-    angle = Math.atan2(-(center.y - self.y), center.x - self.x);
-  }
-
-  return { center, angle };
-}
-
 const bgImage = new Image();
 bgImage.src = "S10 map.png";
 let bgLoaded = false;
@@ -605,7 +582,6 @@ function drawCentroidMark(arr, colorLight) {
   drawCross(cx, cy, colorLight);
 }
 
-<script>
 function getSectorDirection(base, color) {
   const others = color === "red" ? bluePoints : redPoints;
 
@@ -673,7 +649,7 @@ const rangePresets = {
   ioriEX:        { shape: "sector", center: "nearestOpp",
                    params: { radius: 250, angleDeg: 60 } },
 
-  marinaEX:      { shape: "marinaEX", center: "nearestOpp",
+  marinaEX:      { shape: "ringSector", center: "nearestOpp",
                    params: { inner: 500, outer: 1000, angleDeg: 50, offset: 550 } },
 
   reisaMagicEX:  { shape: "sector", center: "self",
@@ -871,7 +847,7 @@ function drawRangeAttack() {
     const nearestEnemy = findNearest(baseCenter, others);
     if (!nearestEnemy) return;
 
-    const angle = Math.atan2(nearestEnemy.y - baseCenter.y, nearestEnemy.x - baseCenter.x);
+    const angle = Math.atan2(-(nearestEnemy.y - baseCenter.y), nearestEnemy.x - baseCenter.x);
     const angleDeg = angle * 180 / Math.PI;
 
     drawHibikiEX(nearestEnemy, angleDeg, getLightColorByBase());
