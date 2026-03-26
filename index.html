@@ -120,6 +120,7 @@
             <option value="atsukoNS">アツコNS</option>
             <option value="ioriEX">イオリEX</option>
             <option value="kaedeEX">カノエEX</option>
+            <option value="kirinoNS">キリノNS※単体攻撃</option>
             <option value="koharuMizugiEX">コハル（水着）EX</option>
             <option value="konokaEX">コノカEX</option>
             <option value="sakiEX">サキEX</option>
@@ -877,6 +878,36 @@ function drawRangeAttack() {
     return;
   }
 
+  // キリノNS：基準点から距離950*scale以内で最も遠い異色点を強調
+if (key === "kirinoNS") {
+  const others = getOppositePointsByColor(basePoint.color);
+  const base = self;
+
+  const limit = 950 * scale;
+
+  // 距離limit以内の異色点を抽出
+  const candidates = others
+    .map(p => ({ p, d: Math.sqrt(dist2(base, p)) }))
+    .filter(o => o.d <= limit);
+
+  if (candidates.length === 0) return;
+
+  // 最も遠い異色点を選ぶ
+  let farthest = candidates[0];
+  for (let i = 1; i < candidates.length; i++) {
+    if (candidates[i].d > farthest.d) {
+      farthest = candidates[i];
+    }
+  }
+
+  // ★ 強調円は基準点と同じ色
+  const highlightColor = getLightColorByBase();
+
+  drawHighlightCircle(farthest.p, highlightColor);
+
+  return;
+}
+  
     // ヒビキEX：部隊重心→最も近い異色点の向き
   if (key === "hibikiEX") {
     const same = getPointsByColor(basePoint.color);
