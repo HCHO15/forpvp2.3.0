@@ -964,10 +964,10 @@ if (key === "harunaNewyearEX") {
 
     // 円周（濃い黄色）を「段階」に応じた本数だけ描画
     ctx.strokeStyle = "rgba(255, 235, 59, 0.95)"; // 濃い黄色
-    ctx.lineWidth = 1; // とにかく細く
+    ctx.lineWidth = 2; // とにかく細く
 
     const ringCount = 1 + level; // 段階0→1本, 1→2本, 2→3本, 4→5本 など
-    const ringGap = 2 * scale;   // 円周同士の間隔（小さめ）
+    const ringGap = 7 * scale;   // 円周同士の間隔（小さめ）
 
     for (let r = 0; r < ringCount; r++) {
       ctx.beginPath();
