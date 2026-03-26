@@ -155,6 +155,7 @@
             <option value="meguEX">メグEX</option>
             <option value="yakumoEX">ヤクモEX</option>
             <option value="yuzuEX">ユズEX</option>
+            <option value="yuzuEX">ユズNS※</option>
             <option value="reisaEX">レイサEX</option>
             <option value="reisaMagicEX">レイサ（マジカル）EX</option>
             
@@ -990,6 +991,26 @@ if (key === "harunaNewyearEX") {
 
     ctx.restore();
   });
+
+  return;
+}
+
+  // ユズNS※：基準点中心に半径100の円（塗りつぶしは異色）
+if (key === "yuzuNS") {
+  const center = self;
+  const { cx, cy } = logicalToCanvas(center.x, center.y);
+
+  // 基準点とは異なる色を使う
+  const fillColor = basePoint.color === "red"
+    ? COLOR_BLUE_LIGHT   // 赤基準 → 青塗り
+    : COLOR_RED_LIGHT;   // 青基準 → 赤塗り
+
+  ctx.save();
+  ctx.fillStyle = fillColor;
+  ctx.beginPath();
+  ctx.arc(cx, cy, 100 * scale, 0, Math.PI * 2); // ★ 半径100に変更
+  ctx.fill();
+  ctx.restore();
 
   return;
 }
