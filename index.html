@@ -108,7 +108,7 @@
 
       <div id="rangeControls">
         <div>
-          半径(m)：
+          半径(cm)：
           <input type="range" id="radiusSlider" min="50" max="1200" step="10" value="700">
           <span id="radiusValue">700</span>
 
@@ -126,6 +126,7 @@
             <option value="junkoEX">ジュンコEX</option>
             <option value="sumireEX">スミレEX</option>
             <option value="tsubakiEX">ツバキEX</option>
+            <option value="tsurugiEXAA">ツルギEXAA</option>
             <option value="tokiEX12">トキEX1・2撃目</option>
             <option value="tokiEX3">トキEX3撃目</option>
             <option value="nagisaEX">ナギサEX</option>
@@ -619,12 +620,14 @@ const rangePresets = {
   minoriNS:      { shape: "sector", center: "centroidOpp",params: { radius: 300, angleDeg: 360 } },
   reisaEX:       { shape: "sector", center: "self",       params: { radius: 700, angleDeg: 90  } },
   tsubakiEX:     { shape: "sector", center: "self",       params: { radius: 700, angleDeg: 360 } },
+  tsurugiEXAA:   { shape: "sector", center: "self",       params: { radius: 500, angleDeg: 45  } },
   hanakoMizugiEX:{ shape: "sector", center: "self",       params: { radius: 850, angleDeg: 60  } },
   hoshinoRinsenEX:{shape: "sector", center: "nearestOpp", params: { radius: 300, angleDeg: 360 } },
   hoshinoRinsenSS:{shape: "sector", center: "self",       params: { radius: 850, angleDeg: 30  } },
   hasumiMizugiEX:{ shape: "sector", center: "self",       params: { radius: 1150,angleDeg: 45  } },
   yakumoEX:      { shape: "sector", center: "centroidOpp",params: { radius: 510, angleDeg: 360 } },
   yuzuNS:        { shape: "sector", center: "self",       params: { radius: 100, angleDeg: 360 } },
+  shunEXAA:      { shape: "sector", center: "self",       params: { radius: 933, angleDeg: 360 } },
 
   junkoEX:       { shape: "rect", center: "nearestOpp", params: { width: 900,  height: 150, mode: "fromSelf" } },
   mutsukiNewyearNS: { shape: "rect", center: "nearestOpp", params: { width: 950,  height: 150, mode: "fromSelf" } },
@@ -638,11 +641,7 @@ const rangePresets = {
   hiyoriMizugiEX:{ shape: "rect", center: "nearestOpp", params: { width: 1000, height: 50,  mode: "fromSelf" } },
   sayaCasualEX:  { shape: "rect", center: "centroidOpp",params: { width: 200,  height: 800, mode: "center"   } },
 
-  mutsukiNewyearEX: {
-    shape: "ringSector",
-    center: "self",
-    params: { inner: 550, outer: 1100, angleDeg: 90 }
-  },
+  mutsukiNewyearEX: { shape: "ringSector", center: "self", params: { inner: 550, outer: 1100, angleDeg: 90  } },
 
   hibikiEX:      { shape: "hibikiEX", center: "nearestOpp", params: {} },
 
@@ -651,9 +650,7 @@ const rangePresets = {
 
   marinaEX:      { shape: "ringSector", center: "nearestOpp",
                    params: { inner: 500, outer: 1000, angleDeg: 50, offset: 550 } },
-
-  reisaMagicEX:  { shape: "sector", center: "self",
-                   params: { radius: 700, angleDeg: 120 } }
+  
 };
 
 function getNearestOppositePoint(self) {
