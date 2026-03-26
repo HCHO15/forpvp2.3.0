@@ -923,15 +923,30 @@ if (key === "harunaNewyearEX") {
 
   // α段階（従来色は 0.55）
   const baseAlpha = 0.55;
-  const step = 0.15;
-  const n = filtered.length;
-  const alphas = [];
+const step = 0.15;
+const maxAlpha = 0.85;
 
-  if (n === 1) alphas.push(baseAlpha + step * 4);
-  if (n === 2) alphas.push(baseAlpha + step * 2, baseAlpha + step * 1);
-  if (n === 3) alphas.push(baseAlpha + step * 2, baseAlpha + step * 1, baseAlpha);
-  if (n === 4) alphas.push(baseAlpha + step * 1, baseAlpha, baseAlpha, baseAlpha);
-  if (n >= 5) for (let i = 0; i < n; i++) alphas.push(baseAlpha);
+const alphas = [];
+
+if (n === 1) {
+  alphas.push(Math.min(baseAlpha + step * 4, maxAlpha));
+}
+if (n === 2) {
+  alphas.push(Math.min(baseAlpha + step * 2, maxAlpha));
+  alphas.push(Math.min(baseAlpha + step * 1, maxAlpha));
+}
+if (n === 3) {
+  alphas.push(Math.min(baseAlpha + step * 2, maxAlpha));
+  alphas.push(Math.min(baseAlpha + step * 1, maxAlpha));
+  alphas.push(baseAlpha);
+}
+if (n === 4) {
+  alphas.push(Math.min(baseAlpha + step * 1, maxAlpha));
+  alphas.push(baseAlpha, baseAlpha, baseAlpha);
+}
+if (n >= 5) {
+  for (let i = 0; i < n; i++) alphas.push(baseAlpha);
+}
 
   // 描画
   filtered.forEach((o, i) => {
