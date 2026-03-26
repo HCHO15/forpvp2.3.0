@@ -907,59 +907,69 @@ function drawRangeAttack() {
     return;
   }
 
-  // ハルナ（正月）EX：距離950以内の異色点に円を重ね描画
+// ハルナ（正月）EX：距離950以内の異色点に円を重ね描画
 if (key === "harunaNewyearEX") {
   const others = getOppositePointsByColor(basePoint.color);
   const base = self;
 
-  // 距離950以内の異色点を抽出し、近い順に並べる
+  // limit にも scale を適用（デフォルト 950）
+  const rawLimit = (preset.params && preset.params.limit) ? preset.params.limit : 950;
+  const limit = rawLimit * scale;
+
+  // 距離limit以内の異色点を抽出し、近い順に並べる（最大5つ）
   const filtered = others
     .map(p => ({ p, d2: dist2(base, p) }))
-    .filter(o => Math.sqrt(o.d2) <= 950 * scale)
+    .filter(o => o.d2 <= limit * limit)
     .sort((a, b) => a.d2 - b.d2)
     .slice(0, 5);
 
-  if (filtered.length === 0) return;
+  const n = filtered.length;
+  if (n === 0) return;
 
   // α段階（従来色は 0.55）
   const baseAlpha = 0.55;
-const step = 0.15;
-const maxAlpha = 0.85;
+  const step = 0.15;
+  const maxAlpha = 0.85;
 
-const alphas = [];
+  const alphas = [];
 
-if (n === 1) {
-  alphas.push(Math.min(baseAlpha + step * 4, maxAlpha));
-}
-if (n === 2) {
-  alphas.push(Math.min(baseAlpha + step * 2, maxAlpha));
-  alphas.push(Math.min(baseAlpha + step * 1, maxAlpha));
-}
-if (n === 3) {
-  alphas.push(Math.min(baseAlpha + step * 2, maxAlpha));
-  alphas.push(Math.min(baseAlpha + step * 1, maxAlpha));
-  alphas.push(baseAlpha);
-}
-if (n === 4) {
-  alphas.push(Math.min(baseAlpha + step * 1, maxAlpha));
-  alphas.push(baseAlpha, baseAlpha, baseAlpha);
-}
-if (n >= 5) {
-  for (let i = 0; i < n; i++) alphas.push(baseAlpha);
-}
+  if (n === 1) {
+    // +4段階
+    alphas.push(Math.min(baseAlpha + step * 4, maxAlpha));
+  } else if (n === 2) {
+    // 近い順に +2, +1
+    alphas.push(Math.min(baseAlpha + step * 2, maxAlpha));
+    alphas.push(Math.min(baseAlpha + step * 1, maxAlpha));
+  } else if (n === 3) {
+    // 近い順に +2, +1, +0
+    alphas.push(Math.min(baseAlpha + step * 2, maxAlpha));
+    alphas.push(Math.min(baseAlpha + step * 1, maxAlpha));
+    alphas.push(baseAlpha);
+  } else if (n === 4) {
+    // 近い順に +1, 0, 0, 0
+    alphas.push(Math.min(baseAlpha + step * 1, maxAlpha));
+    alphas.push(baseAlpha, baseAlpha, baseAlpha);
+  } else {
+    // 5個以上はすべて同じ濃さ
+    for (let i = 0; i < n; i++) alphas.push(baseAlpha);
+  }
 
-  // 描画
+  // 描画（半径200にも scale を適用）
+  const r = 200 * scale;
+
   filtered.forEach((o, i) => {
     const p = o.p;
     const { cx, cy } = logicalToCanvas(p.x, p.y);
 
-    ctx.save();
-    ctx.fillStyle = basePoint.color === "red"
-      ? `rgba(229,57,53,${alphas[i]})`
-      : `rgba(30,136,229,${alphas[i]})`;
+    const alpha = alphas[i];
+    const fill = basePoint.color === "red"
+      ? `rgba(229,57,53,${alpha})`
+      : `rgba(30,136,229,${alpha})`;
 
+    ctx.save();
+    ctx.fillStyle = fill;
     ctx.beginPath();
-    ctx.arc(cx, cy, 200 * (129/350), 0, Math.PI * 2);
+    ctx.arc(cx, cy, r, 0, Math.PI * 2);
     ctx.fill();
     ctx.restore();
   });
