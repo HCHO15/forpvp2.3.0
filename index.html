@@ -915,7 +915,7 @@ if (key === "harunaNewyearEX") {
   // 距離950以内の異色点を抽出し、近い順に並べる
   const filtered = others
     .map(p => ({ p, d2: dist2(base, p) }))
-    .filter(o => Math.sqrt(o.d2) <= 950)
+    .filter(o => Math.sqrt(o.d2) <= 950 * scale)
     .sort((a, b) => a.d2 - b.d2)
     .slice(0, 5);
 
