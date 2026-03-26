@@ -119,13 +119,16 @@
             <option value="atsukoEX">アツコEX</option>
             <option value="atsukoNS">アツコNS</option>
             <option value="ioriEX">イオリEX</option>
+            <option value="kaedeEX">カノエEX</option>
             <option value="koharuMizugiEX">コハル（水着）EX</option>
+            <option value="konokaEX">コノカEX</option>
             <option value="sakiEX">サキEX</option>
             <option value="sayaCasualEX">サヤ（私服）EX</option>
             <option value="shirokoRidingNS">シロコ（ライディング）NS</option>
             <option value="shunEXAA">シュンEXAA</option>
             <option value="junkoEX">ジュンコEX</option>
             <option value="sumireEX">スミレEX</option>
+            <option value="kotoriCheerEX">コトリ（応援団）EX</option>
             <option value="tsubakiEX">ツバキEX</option>
             <option value="tsurugiEXAA">ツルギEXAA</option>
             <option value="tokiEX12">トキEX1・2撃目</option>
@@ -139,6 +142,7 @@
             <option value="hinaDressEX1">ヒナ（ドレス）EX1・2回目</option>
             <option value="hinaDressEX3">ヒナ（ドレス）EX3回目</option>
             <option value="hibikiEX">ヒビキEX</option>
+            <option value="hihumiEX">ヒフミEX</option>  
             <option value="hiyoriMizugiEX">ヒヨリ（水着）EX</option>
             <option value="hoshinoRinsenEX">ホシノ（臨戦）EX</option>
             <option value="hoshinoRinsenSS">ホシノ（臨戦）SS</option>
@@ -147,10 +151,13 @@
             <option value="minoriNS">ミノリNS</option>
             <option value="mutsukiNewyearEX">ムツキ（正月）EX</option>
             <option value="mutsukiNewyearNS">ムツキ（正月）NS</option>
+            <option value="meguAA">メグAA</option>
+            <option value="meguEX">メグEX</option>
             <option value="yakumoEX">ヤクモEX</option>
             <option value="yuzuEX">ユズEX</option>
             <option value="reisaEX">レイサEX</option>
             <option value="reisaMagicEX">レイサ（マジカル）EX</option>
+            <option value="hihumiEX">ヒフミEX</option>  
           </select>
         </div>
 
@@ -630,6 +637,12 @@ const rangePresets = {
   yakumoEX:      { shape: "sector", center: "centroidOpp",params: { radius: 510, angleDeg: 360 } },
   yuzuNS:        { shape: "sector", center: "self",       params: { radius: 100, angleDeg: 360 } },
   shunEXAA:      { shape: "sector", center: "self",       params: { radius: 933, angleDeg: 360 } },
+  hihumiEX:      { shape: "sector", center: "nearestOpp", params: { radius: 300, angleDeg: 360 } },
+  konokaEX:      { shape: "sector", center: "self",       params: { radius: 400, angleDeg: 45  } },
+  meguAA:        { shape: "sector", center: "self",       params: { radius: 500, angleDeg: 45  } },
+  meguEX:        { shape: "sector", center: "self",       params: { radius: 600, angleDeg: 45  } },
+  kotoriCheerEX: { shape: "sector", center: "self",       params: { radius: 1000, angleDeg: 60  } },
+  kaedeEX:       { shape: "sector", center: "centroidOpp",params: { radius: 250, angleDeg: 360 } },
 
   junkoEX:       { shape: "rect", center: "nearestOpp", params: { width: 900,  height: 150, mode: "fromSelf" } },
   mutsukiNewyearNS: { shape: "rect", center: "nearestOpp", params: { width: 950,  height: 150, mode: "fromSelf" } },
