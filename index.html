@@ -1164,6 +1164,19 @@ if (preset.shape === "rect") {
   const { cx, cy } = logicalToCanvas(center.x, center.y);
   const p = scaledParams(preset.params, scale);
 
+// ★ シュンEXAA：半径933の点線円を描画（塗りつぶしなし）
+ if (key === "shunEXAA") {
+  const center = self;
+  const radius = 933 * scale;
+
+  const color = basePoint.color === "red"
+    ? "rgba(229,57,53,0.55)"   // かなり薄い赤
+    : "rgba(30,136,229,0.55)"; // かなり薄い青
+
+  drawDashedCircleLogical(center, radius, color);
+  return;
+}
+  
   if (preset.shape === "sector") {
     drawSectorRaw({
       cx,
