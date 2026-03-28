@@ -931,7 +931,7 @@ if (key === "kirinoNS") {
   if (key === "hibikiEX") {
     const same = getPointsByColor(basePoint.color);
     const others = getOppositePointsByColor(basePoint.color);
-    const baseCenter = computeCentroid(same);
+    const baseCenter = computeCentroid(same.filter(p => p.id !== 5));
     if (!baseCenter || !others.length) return;
     const nearestEnemy = findNearest(baseCenter, others);
     if (!nearestEnemy) return;
@@ -1083,7 +1083,7 @@ if (key === "yuzuNS") {
     if (key === "sayaCasualEX") {
         // ★ サヤ（私服）EXだけは部隊重心 → 異色点 の向き
         const same = getPointsByColor(basePoint.color);
-        const baseCenter = computeCentroid(same);
+        const baseCenter = computeCentroid(same.filter(p => p.id !== 5));
         angle = Math.atan2(center.y - baseCenter.y, center.x - baseCenter.x);
     } else {
         // 通常の直線系
@@ -1125,8 +1125,8 @@ if (key === "yuzuNS") {
 }
 
 function applyAttackSP() {
-  const redC = computeCentroid(redPoints);
-  const blueC = computeCentroid(bluePoints);
+  const redC = computeCentroid(redPoints.filter(p => p.id !== 5));
+  const blueC = computeCentroid(bluePoints.filter(p => p.id !== 5));
 
   if (redC && bluePoints.length) {
     const nearestBlue = findNearest(redC, bluePoints);
@@ -1140,8 +1140,8 @@ function applyAttackSP() {
 }
 
 function applyBuffSP() {
-  const redC = computeCentroid(redPoints);
-  const blueC = computeCentroid(bluePoints);
+  const redC = computeCentroid(redPoints.filter(p => p.id !== 5));
+  const blueC = computeCentroid(bluePoints.filter(p => p.id !== 5));
 
   if (redC && redPoints.length >= 2) {
     const nearestRed = findNearest(redC, redPoints);
@@ -1186,9 +1186,8 @@ function applyBuffST() {
 }
 
 function applySubFunction() {
-  drawCentroidMark(redPoints, COLOR_RED_LIGHT);
-  drawCentroidMark(bluePoints, COLOR_BLUE_LIGHT);
-
+  drawCentroidMark(redPoints.filter(p => p.id !== 5), COLOR_RED_LIGHT);
+  drawCentroidMark(bluePoints.filter(p => p.id !== 5), COLOR_BLUE_LIGHT);
   if (modeIndex === 0) applyAttackSP();
   if (modeIndex === 1) applyBuffSP();
   if (modeIndex === 2) applyAttackST();
