@@ -955,8 +955,8 @@ if (key === "kirinoNS") {
 
   // ★ 距離制限 950 の点線円（かなり薄い色）
   const limitColor = basePoint.color === "red"
-    ? "rgba(229,57,53,0.18)"
-    : "rgba(30,136,229,0.18)";
+    ? "rgba(229,57,53,0.55)"
+    : "rgba(30,136,229,0.55)";
   drawDashedCircleLogical(base, limit, limitColor);
 
   // 距離limit以内の異色点を抽出
@@ -1034,8 +1034,8 @@ if (key === "harunaNewyearEX") {
    // ★ 距離制限 950 の点線円（かなり薄い色）
   const limitR = 950 * scale;
   const limitColor = basePoint.color === "red"
-    ? "rgba(229,57,53,0.18)"
-    : "rgba(30,136,229,0.18)";
+    ? "rgba(229,57,53,0.55)"
+    : "rgba(30,136,229,0.55)";
   drawDashedCircleLogical(base, limitR, limitColor);
 
   // 距離950以内の異色点を抽出し、近い順に並べる（距離にも scale を適用）
