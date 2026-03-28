@@ -161,7 +161,7 @@
             <option value="yuzuEX">ユズEX</option>
             <option value="yuzuNS">ユズNS※対象を選択</option>
             <option value="reisaEX">レイサEX</option>
-            <option value="reisaMagicEX">レイサ（マジカル）EX</option>
+            <option value="reisaMagicEX">レイサ（マジカル）EXPS</option>
             
           </select>
         </div>
@@ -603,6 +603,19 @@ function drawHighlightCircle(point, color) {
   ctx.restore();
 }
 
+function drawDashedCircleLogical(center, radius, color) {
+  const { cx, cy } = logicalToCanvas(center.x, center.y);
+
+  ctx.save();
+  ctx.setLineDash([6, 4]);          // 点線
+  ctx.strokeStyle = color;
+  ctx.lineWidth = 1;                // ごく細く
+  ctx.beginPath();
+  ctx.arc(cx, cy, radius, 0, Math.PI * 2);
+  ctx.stroke();
+  ctx.restore();
+}
+  
 function drawCentroidMark(arr, colorLight) {
   const c = computeCentroid(arr);
   if (!c) return;
@@ -678,8 +691,6 @@ const rangePresets = {
   hinaDressEX:   { shape: "combo", keys: ["hinaDressEX1", "hinaDressEX3"]},
   tokiEX:        { shape: "combo", keys: ["tokiEX12", "tokiEX3"]},
 
-
-
   mutsukiNewyearEX: { shape: "ringSector", center: "self", params: { inner: 550, outer: 1100, angleDeg: 90  } },
 
   hibikiEX:      { shape: "hibikiEX", center: "nearestOpp", params: {} },
@@ -690,7 +701,7 @@ const rangePresets = {
   marinaEX:      { shape: "ringSector", center: "nearestOpp",
                    params: { inner: 500, outer: 1000, angleDeg: 50, offset: 550 } },
 
-  reisaMagicEX: { shape: "reisaMagicEX", center: "summon", params: { radius: 700, angleDeg: 360 } },
+  reisaMagicEX: { shape: "reisaMagicEX", center: "summon", params: { radius: 200, angleDeg: 360 } },
 
   harunaNewyearEX: { shape: "harunaNewyearEX", center: "self", params: { radius: 200, limit: 950 } },
   
@@ -942,6 +953,12 @@ if (key === "kirinoNS") {
 
   const limit = 950 * scale;
 
+  // ★ 距離制限 950 の点線円（かなり薄い色）
+  const limitColor = basePoint.color === "red"
+    ? "rgba(229,57,53,0.18)"
+    : "rgba(30,136,229,0.18)";
+  drawDashedCircleLogical(base, limit, limitColor);
+
   // 距離limit以内の異色点を抽出
   const candidates = others
     .map(p => ({ p, d: Math.sqrt(dist2(base, p)) }))
@@ -1013,6 +1030,13 @@ if (key === "kirinoNS") {
 if (key === "harunaNewyearEX") {
   const others = getOppositePointsByColor(basePoint.color);
   const base = self;
+
+   // ★ 距離制限 950 の点線円（かなり薄い色）
+  const limitR = 950 * scale;
+  const limitColor = basePoint.color === "red"
+    ? "rgba(229,57,53,0.18)"
+    : "rgba(30,136,229,0.18)";
+  drawDashedCircleLogical(base, limitR, limitColor);
 
   // 距離950以内の異色点を抽出し、近い順に並べる（距離にも scale を適用）
   const filtered = others
