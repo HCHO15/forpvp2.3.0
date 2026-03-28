@@ -919,7 +919,7 @@ if (preset.shape === "combo") {
   return;
 }
   
-  // レイサ（マジカル）EX：基準点と同色の☆点を中心に半径700の円を描画
+  // レイサ（マジカル）EX：基準点と同色の☆点を中心に半径200の円を描画
 if (key === "reisaMagicEX") {
   const color = basePoint.color;
   const arr = getPointsByColor(color);
@@ -931,7 +931,7 @@ if (key === "reisaMagicEX") {
   if (!summon) return;
 
   const { cx, cy } = logicalToCanvas(summon.x, summon.y);
-  const radius = 700 * scale;
+  const radius = 200 * scale;
 
   // 既存の扇形描画を応用（360°なので円になる）
   drawSectorRaw({
