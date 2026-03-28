@@ -924,17 +924,15 @@ if (key === "reisaMagicEX") {
   return;
 }
   
-  // ヒナ（ドレス）EX：EX1・2回目 と EX3回目 を同時に描画
+// ヒナ（ドレス）EX（EX1・2回目 + EX3回目）
 if (key === "hinaDressEX") {
-  drawRangeAttackForPreset("hinaDressEX1", self, scale);
-  drawRangeAttackForPreset("hinaDressEX3", self, scale);
+  drawComboRect(["hinaDressEX1", "hinaDressEX3"], self, scale);
   return;
 }
 
-// トキEX：1・2撃目 と 3撃目 を同時に描画
+// トキEX（1・2撃目 + 3撃目）
 if (key === "tokiEX") {
-  drawRangeAttackForPreset("tokiEX12", self, scale);
-  drawRangeAttackForPreset("tokiEX3",  self, scale);
+  drawComboRect(["tokiEX12", "tokiEX3"], self, scale);
   return;
 }
   
@@ -1165,18 +1163,23 @@ if (key === "yuzuNS") {
   }
 }
 
-function drawRangeAttackForPreset(presetKey, self, scale) {
-  const preset = rangePresets[presetKey];
-  if (!preset) return;
+function drawComboRect(keys, self, scale) {
+  keys.forEach(k => {
+    const preset = rangePresets[k];
+    if (!preset || preset.shape !== "rect") return;
 
-  if (preset.shape !== "rect") return;
+    const p = scaledParams(preset.params, scale);
+    const center = resolveCenter(self, preset.center);
+    const angle  = resolveDirection(self, center, preset.center);
 
-  const p = scaledParams(preset.params, scale);
-  const center = resolveCenter(self, preset.center);
-  const angle  = resolveDirection(self, center, preset.center);
-  const { cx, cy } = logicalToCanvas(center.x, center.y);
+    // fromSelf の場合は自分の位置を使う
+    const { cx, cy } = logicalToCanvas(
+      p.mode === "fromSelf" ? self.x : center.x,
+      p.mode === "fromSelf" ? self.y : center.y
+    );
 
-  drawRotatedRect(cx, cy, p.width, p.height, angle, getLightColorByBase(), p.mode);
+    drawRotatedRect(cx, cy, p.width, p.height, angle, getLightColorByBase(), p.mode);
+  });
 }
 
 function applyAttackSP() {
