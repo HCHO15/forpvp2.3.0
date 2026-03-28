@@ -687,6 +687,8 @@ const rangePresets = {
   marinaEX:      { shape: "ringSector", center: "nearestOpp",
                    params: { inner: 500, outer: 1000, angleDeg: 50, offset: 550 } },
 
+  reisaMagicEX: { shape: "reisaMagicEX", center: "summon", params: { radius: 700, angleDeg: 360 } },
+
   harunaNewyearEX: { shape: "harunaNewyearEX", center: "self", params: { radius: 200, limit: 950 } },
   
 };
@@ -897,6 +899,33 @@ function drawRangeAttack() {
     return;
   }
 
+  // レイサ（マジカル）EX：基準点と同色の☆点を中心に半径700の円を描画
+if (key === "reisaMagicEX") {
+  const color = basePoint.color;
+  const arr = getPointsByColor(color);
+
+  // ☆点（id=5）を探す
+  const summon = arr.find(p => p.id === 5);
+
+  // ☆点がいなければ描画しない
+  if (!summon) return;
+
+  const { cx, cy } = logicalToCanvas(summon.x, summon.y);
+  const radius = 700 * scale;
+
+  // 既存の扇形描画を応用（360°なので円になる）
+  drawSectorRaw({
+    cx,
+    cy,
+    radius,
+    angleDeg: 360,
+    directionRad: 0,          // 360°なので向きは不要
+    color: getLightColorByBase()
+  });
+
+  return;
+}
+  
   // キリノNS：基準点から距離950*scale以内で最も遠い異色点を強調
 if (key === "kirinoNS") {
   const others = getOppositePointsByColor(basePoint.color);
