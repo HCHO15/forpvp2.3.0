@@ -675,6 +675,11 @@ const rangePresets = {
   hiyoriMizugiEX:{ shape: "rect", center: "nearestOpp", params: { width: 1000, height: 50,  mode: "fromSelf" } },
   sayaCasualEX:  { shape: "rect", center: "centroidOpp",params: { width: 200,  height: 800, mode: "center"   } },
 
+  hinaDressEX:   { shape: "combo", keys: ["hinaDressEX1", "hinaDressEX3"]},
+  tokiEX:        { shape: "combo", keys: ["tokiEX12", "tokiEX3"]},
+
+
+
   mutsukiNewyearEX: { shape: "ringSector", center: "self", params: { inner: 550, outer: 1100, angleDeg: 90  } },
 
   hibikiEX:      { shape: "hibikiEX", center: "nearestOpp", params: {} },
@@ -879,7 +884,7 @@ function drawRangeAttack() {
   const scale = 129 / 350;
 
   // 手動
-  if (key === "manual" || !preset) {
+  if (key === "manual") {
     const center = self;
     const direction = getSectorDirection(self, self.color);
     const { cx, cy } = logicalToCanvas(center.x, center.y);
@@ -897,6 +902,12 @@ function drawRangeAttack() {
     return;
   }
 
+  // ★ combo（複合スキル）
+if (preset.shape === "combo") {
+  drawComboRect(preset.keys, self, scale);
+  return;
+}
+  
   // レイサ（マジカル）EX：基準点と同色の☆点を中心に半径700の円を描画
 if (key === "reisaMagicEX") {
   const color = basePoint.color;
@@ -921,18 +932,6 @@ if (key === "reisaMagicEX") {
     color: getLightColorByBase()
   });
 
-  return;
-}
-  
-// ヒナ（ドレス）EX（EX1・2回目 + EX3回目）
-if (key === "hinaDressEX") {
-  drawComboRect(["hinaDressEX1", "hinaDressEX3"], self, scale);
-  return;
-}
-
-// トキEX（1・2撃目 + 3撃目）
-if (key === "tokiEX") {
-  drawComboRect(["tokiEX12", "tokiEX3"], self, scale);
   return;
 }
   
@@ -1104,36 +1103,36 @@ if (key === "yuzuNS") {
   return;
 }
   
-  // 直線系（rect）
-  if (preset.shape === "rect") {
-    const p = scaledParams(preset.params, scale);
-    const mode = p.mode || "center";
+// 直線系（rect）
+// combo の rect はここでは描かない
+if (preset.shape === "rect") {
 
-    if (mode === "fromSelf") {
-      const center = resolveCenter(self, preset.center);
-      const angle = resolveDirection(self, center, preset.center);
-      const { cx, cy } = logicalToCanvas(self.x, self.y);
+  // ★ combo の内部キーから呼ばれた場合は drawComboRect が処理するのでここは通らない
+  const p = scaledParams(preset.params, scale);
+  const mode = p.mode || "center";
 
-      drawRotatedRect(cx, cy, p.width, p.height, angle, getLightColorByBase(), "fromSelf");
-    } else {
-    const center = resolveCenter(self, preset.center);
+  // rect の中心点
+  const center = resolveCenter(self, preset.center);
 
-    let angle;
-    if (key === "sayaCasualEX") {
-        // ★ サヤ（私服）EXだけは部隊重心 → 異色点 の向き
-        const same = getPointsByColor(basePoint.color);
-        const baseCenter = computeCentroid(same.filter(p => p.id !== 5));
-        angle = Math.atan2(center.y - baseCenter.y, center.x - baseCenter.x);
-    } else {
-        // 通常の直線系
-        angle = resolveDirection(self, center, preset.center);
-    }
-
-    const { cx, cy } = logicalToCanvas(center.x, center.y);
-    drawRotatedRect(cx, cy, p.width, p.height, angle, getLightColorByBase(), "center");
-}
-    return;
+  // rect の向き（サヤ私服だけ特別）
+  let angle;
+  if (key === "sayaCasualEX") {
+    const same = getPointsByColor(basePoint.color);
+    const baseCenter = computeCentroid(same.filter(p => p.id !== 5));
+    angle = Math.atan2(center.y - baseCenter.y, center.x - baseCenter.x);
+  } else {
+    angle = resolveDirection(self, center, preset.center);
   }
+
+  // fromSelf の場合は自分の位置から伸ばす
+  const { cx, cy } = logicalToCanvas(
+    mode === "fromSelf" ? self.x : center.x,
+    mode === "fromSelf" ? self.y : center.y
+  );
+
+  drawRotatedRect(cx, cy, p.width, p.height, angle, getLightColorByBase(), mode);
+  return;
+}
 
   // 通常の円形・扇形・リング扇形
   const center = resolveCenter(self, preset.center);
@@ -1169,16 +1168,21 @@ function drawComboRect(keys, self, scale) {
     if (!preset || preset.shape !== "rect") return;
 
     const p = scaledParams(preset.params, scale);
-    const center = resolveCenter(self, preset.center);
-    const angle  = resolveDirection(self, center, preset.center);
+    const mode = p.mode || "center";
 
-    // fromSelf の場合は自分の位置を使う
+    // rect の中心点を決定
+    const center = resolveCenter(self, preset.center);
+
+    // rect の向きを決定
+    const angle = resolveDirection(self, center, preset.center);
+
+    // fromSelf の場合は自分の位置から伸ばす
     const { cx, cy } = logicalToCanvas(
-      p.mode === "fromSelf" ? self.x : center.x,
-      p.mode === "fromSelf" ? self.y : center.y
+      mode === "fromSelf" ? self.x : center.x,
+      mode === "fromSelf" ? self.y : center.y
     );
 
-    drawRotatedRect(cx, cy, p.width, p.height, angle, getLightColorByBase(), p.mode);
+    drawRotatedRect(cx, cy, p.width, p.height, angle, getLightColorByBase(), mode);
   });
 }
 
@@ -1420,7 +1424,7 @@ shortcutSelect.addEventListener("change", () => {
   const key = shortcutSelect.value;
   const preset = rangePresets[key];
 
-  if (key === "manual" || !preset) {
+  if (key === "manual") {
     redraw();
     return;
   }
