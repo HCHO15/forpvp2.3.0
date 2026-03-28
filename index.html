@@ -163,6 +163,11 @@
           </select>
         </div>
 
+        <label style="margin-left:8px;">
+          <input type="checkbox" id="chkSummon">
+          召喚物を考慮
+        </label>
+        
         <div>
           角度(°)：
           <input type="number" id="angleInput" min="1" max="360" value="360">
@@ -299,6 +304,7 @@ const radiusSlider = document.getElementById("radiusSlider");
 const radiusValue = document.getElementById("radiusValue");
 const angleInput = document.getElementById("angleInput");
 const shortcutSelect = document.getElementById("shortcutSelect");
+const chkSummon = document.getElementById("chkSummon");
 
 const countsDisplay = document.getElementById("countsDisplay");
 const redTableBody = document.getElementById("redTableBody");
@@ -443,7 +449,7 @@ function updateTablesFromPoints() {
 }
 
 function getNextId(arr) {
-  for (let i = 1; i <= MAX_POINTS; i++) {
+  for (let i = 1; i <= 5; i++) {
     if (!arr.find(p => p.id === i)) return i;
   }
   return null;
@@ -451,7 +457,14 @@ function getNextId(arr) {
 
 function addPoint(color, x, y) {
   const arr = color === "red" ? redPoints : bluePoints;
-  if (arr.length >= MAX_POINTS) return;
+
+  // ★ 召喚物ONなら5つ目まで許可、OFFなら4つまで
+  if (chkSummon.checked) {
+    if (arr.length >= 5) return;
+  } else {
+    if (arr.length >= 4) return;
+  }
+
   const id = getNextId(arr);
   arr.push({ id, color, x, y });
 }
@@ -550,7 +563,12 @@ function drawPoint(p) {
   ctx.font = "bold 12px system-ui";
   ctx.textAlign = "center";
   ctx.textBaseline = "middle";
+  // ★ 召喚物（id=5）は ☆ を描く
+if (p.id === 5) {
+  ctx.fillText("☆", cx, cy);
+} else {
   ctx.fillText(p.id, cx, cy);
+}
   ctx.restore();
 }
 
@@ -1271,6 +1289,20 @@ btnColor.addEventListener("click", () => {
   }
 });
 
+// ★ 召喚物OFF → id=5 を削除
+chkSummon.addEventListener("change", () => {
+  if (!chkSummon.checked) {
+    redPoints = redPoints.filter(p => p.id !== 5);
+    bluePoints = bluePoints.filter(p => p.id !== 5);
+
+    if (basePoint && basePoint.id === 5) basePoint = null;
+
+    redraw();
+    updateTablesFromPoints();
+    updateCounts();
+  }
+});
+  
 btnReset.addEventListener("click", () => {
   redPoints = [];
   bluePoints = [];
