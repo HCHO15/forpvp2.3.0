@@ -609,7 +609,7 @@ function drawDashedCircleLogical(center, radius, color) {
   ctx.save();
   ctx.setLineDash([6, 4]);          // 点線
   ctx.strokeStyle = color;
-  ctx.lineWidth = 1;                // ごく細く
+  ctx.lineWidth = 3;                
   ctx.beginPath();
   ctx.arc(cx, cy, radius, 0, Math.PI * 2);
   ctx.stroke();
