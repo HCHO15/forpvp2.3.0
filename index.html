@@ -1467,6 +1467,40 @@ angleInput.addEventListener("input", () => {
   redraw();
 });
 
+// ★ +10 ボタン
+document.getElementById("radiusPlus").addEventListener("click", () => {
+  const newValue = Math.min(1200, Number(radiusSlider.value) + 10);
+  radiusSlider.value = newValue;
+  radiusValue.textContent = newValue;
+
+  shortcutSelect.value = "manual";
+  redraw();
+});
+
+// ★ -10 ボタン
+document.getElementById("radiusMinus").addEventListener("click", () => {
+  const newValue = Math.max(50, Number(radiusSlider.value) - 10);
+  radiusSlider.value = newValue;
+  radiusValue.textContent = newValue;
+
+  shortcutSelect.value = "manual";
+  redraw();
+});
+
+// ★ ホイール操作で ±10（スライダー上でのみ動作）
+radiusSlider.addEventListener("wheel", (e) => {
+  e.preventDefault();
+
+  const delta = e.deltaY < 0 ? 10 : -10;
+  const newValue = Math.min(1200, Math.max(50, Number(radiusSlider.value) + delta));
+
+  radiusSlider.value = newValue;
+  radiusValue.textContent = newValue;
+
+  shortcutSelect.value = "manual";
+  redraw();
+});
+  
 shortcutSelect.addEventListener("change", () => {
   const key = shortcutSelect.value;
   const preset = rangePresets[key];
