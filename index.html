@@ -668,7 +668,8 @@ const rangePresets = {
   hinaMizugiEX:  { shape: "sector", center: "self",       params: { radius: 950, angleDeg: 90  } },
   minoriEX:      { shape: "sector", center: "centroidOpp",params: { radius: 300, angleDeg: 360 } },
   minoriNS:      { shape: "sector", center: "centroidOpp",params: { radius: 300, angleDeg: 360 } },
-  reisaEX:       { shape: "sector", center: "self",       params: { radius: 700, angleDeg: 90  } },
+  reisaEX1:      { shape: "sector", center: "self",       params: { radius: 700, angleDeg: 90 } },
+  reisaEX2:      { shape: "sector", center: "self",       params: { radius: 700, angleDeg: 45 } },
   tsubakiEX:     { shape: "sector", center: "self",       params: { radius: 700, angleDeg: 360 } },
   tsurugiEXAA:   { shape: "sector", center: "self",       params: { radius: 500, angleDeg: 45  } },
   hanakoMizugiEX:{ shape: "sector", center: "self",       params: { radius: 850, angleDeg: 60  } },
@@ -698,9 +699,10 @@ const rangePresets = {
   hiyoriMizugiEX:{ shape: "rect", center: "nearestOpp", params: { width: 1000, height: 50,  mode: "fromSelf" } },
   sayaCasualEX:  { shape: "rect", center: "centroidOpp",params: { width: 200,  height: 800, mode: "center"   } },
 
-  hinaDressEX:   { shape: "combo", keys: ["hinaDressEX1", "hinaDressEX3"]},
   tokiEX:        { shape: "combo", keys: ["tokiEX12", "tokiEX3"]},
-
+  hinaDressEX:   { shape: "combo", keys: ["hinaDressEX1", "hinaDressEX3"]},
+  reisaEX:       { shape: "combo", keys: ["reisaEX1", "reisaEX2"] },
+  
   mutsukiNewyearEX: { shape: "ringSector", center: "self", params: { inner: 550, outer: 1100, angleDeg: 90  } },
 
   hibikiEX:      { shape: "hibikiEX", center: "nearestOpp", params: {} },
@@ -1165,6 +1167,31 @@ if (preset.shape === "rect") {
   );
 
   drawRotatedRect(cx, cy, p.width, p.height, angle, getLightColorByBase(), mode);
+  return;
+}
+
+// ★ sector の combo（複数扇形を重ねる）
+if (preset.shape === "combo") {
+  preset.keys.forEach(k => {
+    const p2 = rangePresets[k];
+    if (!p2) return;
+
+    const center2 = resolveCenter(self, p2.center);
+    const direction2 = resolveDirection(self, center2, p2.center);
+    const { cx: cx2, cy: cy2 } = logicalToCanvas(center2.x, center2.y);
+    const sp = scaledParams(p2.params, scale);
+
+    if (p2.shape === "sector") {
+      drawSectorRaw({
+        cx: cx2,
+        cy: cy2,
+        radius: sp.radius,
+        angleDeg: sp.angleDeg,
+        directionRad: direction2,
+        color: getLightColorByBase()
+      });
+    }
+  });
   return;
 }
 
