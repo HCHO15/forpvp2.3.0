@@ -924,12 +924,6 @@ function drawRangeAttack() {
     });
     return;
   }
-
-  // ★ combo（複合スキル）
-if (preset.shape === "combo") {
-  drawComboRect(preset.keys, self, scale);
-  return;
-}
   
   // レイサ（マジカル）EX：基準点と同色の☆点を中心に半径200の円を描画
 if (key === "reisaMagicEX") {
@@ -1140,7 +1134,6 @@ if (key === "yuzuNS") {
 }
   
 // 直線系（rect）
-// combo の rect はここでは描かない
 if (preset.shape === "rect") {
 
   // ★ combo の内部キーから呼ばれた場合は drawComboRect が処理するのでここは通らない
@@ -1170,7 +1163,7 @@ if (preset.shape === "rect") {
   return;
 }
 
-// ★ sector の combo（複数扇形を重ねる）
+// ★ rect / sector 両対応 combo（ここが新しい本命）
 if (preset.shape === "combo") {
   preset.keys.forEach(k => {
     const p2 = rangePresets[k];
@@ -1180,6 +1173,11 @@ if (preset.shape === "combo") {
     const direction2 = resolveDirection(self, center2, p2.center);
     const { cx: cx2, cy: cy2 } = logicalToCanvas(center2.x, center2.y);
     const sp = scaledParams(p2.params, scale);
+
+    if (p2.shape === "rect") {
+      const mode = sp.mode || "center";
+      drawRotatedRect(cx2, cy2, sp.width, sp.height, direction2, getLightColorByBase(), mode);
+    }
 
     if (p2.shape === "sector") {
       drawSectorRaw({
