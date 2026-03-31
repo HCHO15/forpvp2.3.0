@@ -84,7 +84,7 @@
       margin-left: 4px;
     }
 
-    /* 全体の背景と文字色 */
+/* 全体の背景と文字色 */
 body.dark-mode {
   background: #111 !important;
   color: #e0e0e0;
@@ -141,31 +141,37 @@ body.dark-mode #settingsPanel {
   border: 1px solid #444;
 }
 
-/* 設定ウィンドウ内部の文字色と背景をダークモードに合わせる */
+/* 設定ウィンドウ内部の文字色 */
 body.dark-mode #settingsPanel label,
 body.dark-mode #settingsPanel strong,
 body.dark-mode #settingsPanel div {
   color: #eee !important;
 }
 
+/* 設定ウィンドウ内のラジオボタン */
 body.dark-mode #settingsPanel input[type="radio"] {
-  accent-color: #ccc; /* ラジオボタンも見えるように */
+  accent-color: #ccc;
 }
 
+/* 設定ウィンドウ内のボタン */
 body.dark-mode #settingsPanel button {
   background: #444;
   color: #fff;
   border: 1px solid #666;
 }
 
+/* ▼ 範囲プリセット一覧（presetFilterList） */
 body.dark-mode #presetFilterList {
-  background:#222;
-  border-color:#444;
-}
-body.dark-mode #presetFilterList label {
-  color:#eee;
+  background: #222 !important;
+  border-color: #444 !important;
 }
 
+/* ラベル文字色 */
+body.dark-mode #presetFilterList label {
+  color: #eee !important;
+}
+
+/* チェックボックスの色（重要） */
 body.dark-mode #presetFilterList input[type="checkbox"] {
   accent-color: #ccc !important;
 }
