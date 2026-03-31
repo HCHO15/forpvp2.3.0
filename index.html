@@ -140,6 +140,23 @@ body.dark-mode #settingsPanel {
   color: #eee !important;
   border: 1px solid #444;
 }
+
+/* 設定ウィンドウ内部の文字色と背景をダークモードに合わせる */
+body.dark-mode #settingsPanel label,
+body.dark-mode #settingsPanel strong,
+body.dark-mode #settingsPanel div {
+  color: #eee !important;
+}
+
+body.dark-mode #settingsPanel input[type="radio"] {
+  accent-color: #ccc; /* ラジオボタンも見えるように */
+}
+
+body.dark-mode #settingsPanel button {
+  background: #444;
+  color: #fff;
+  border: 1px solid #666;
+}
   </style>
 </head>
 
