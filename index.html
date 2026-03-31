@@ -819,6 +819,53 @@ function getSectorDirection(base, color) {
   return Math.atan2(nearest.y - base.y, nearest.x - base.x);
 }
 
+// ▼ 範囲プリセットのデフォルト ON/OFF 設定（必要に応じて自由に変更）
+const presetDefaultEnabled = {
+  aliceEX: true,
+  aliceRinsenEX: true,
+  atsukoEX: true,
+  atsukoNS: true,
+  ioriEX: true,
+  kanoeEX: true,
+  kirinoNS: true,
+  koharuMizugiEX: true,
+  konokaEX: true,
+  sakiEX: true,
+  sayaCasualEX: true,
+  shirokoRidingNS: true,
+  shunEXAA: true,
+  junkoEX: true,
+  sumireEX: true,
+  kotoriCheerEX: true,
+  tsubakiEX: true,
+  tsurugiEXAA: true,
+  tokiEX: true,
+  nagisaEX: true,
+  nonomiEX: true,
+  hasumiMizugiEX: true,
+  hanakoMizugiEX: true,
+  harunaNewyearEX: true,
+  hinaMizugiEX: true,
+  hinaDressEX: true,
+  hibikiEX: true,
+  hihumiEX: true,
+  hiyoriMizugiEX: true,
+  hoshinoRinsenEX: true,
+  hoshinoRinsenSS: true,
+  marinaEX: true,
+  minoriEX: true,
+  minoriNS: true,
+  mutsukiNewyearEX: true,
+  mutsukiNewyearNS: true,
+  meguAA: true,
+  meguEX: true,
+  yakumoEX: true,
+  yuzuEX: true,
+  yuzuNS: true,
+  reisaEX: true,
+  reisaMagicEX: true
+};
+  
 const rangePresets = {
   yuzuEX:        { shape: "sector", center: "nearestOpp", params: { radius: 200, angleDeg: 360 } },
   atsukoEX:      { shape: "sector", center: "self",       params: { radius: 500, angleDeg: 360 } },
@@ -1852,25 +1899,35 @@ redraw();
 updateTablesFromPoints();
 updateCounts();
 
-// ▼ 設定ウィンドウのプリセット一覧生成
 const presetFilterList = document.getElementById("presetFilterList");
 
+// localStorage の保存データを取得
+const savedPresetEnabled = JSON.parse(localStorage.getItem("presetEnabled") || "{}");
+
+// shortcutSelect の option から一覧生成
 Array.from(shortcutSelect.options).forEach(opt => {
   if (opt.value === "manual") return;
+
+  const key = opt.value;
+
+  // 保存があればそれを優先、なければデフォルト設定
+  const enabled = (key in savedPresetEnabled)
+    ? savedPresetEnabled[key]
+    : presetDefaultEnabled[key];
 
   const label = document.createElement("label");
   label.style.display = "block";
   label.style.marginBottom = "4px";
 
   label.innerHTML = `
-    <input type="checkbox" class="preset-filter" data-value="${opt.value}" checked>
+    <input type="checkbox" class="preset-filter" data-value="${key}" ${enabled ? "checked" : ""}>
     ${opt.textContent}
   `;
 
   presetFilterList.appendChild(label);
 });
 
-// ▼ チェック状態に応じて shortcutSelect を更新
+/* ▼▼▼ 追加：チェック変更時に localStorage 保存 ▼▼▼ */
 function updateShortcutSelect() {
   const filters = document.querySelectorAll(".preset-filter");
   const allowed = ["manual"];
@@ -1904,8 +1961,17 @@ function updateShortcutSelect() {
   shortcutSelect.value = allowed.includes(current) ? current : "manual";
 }
 
+// チェック変更時に保存
 document.querySelectorAll(".preset-filter").forEach(cb => {
-  cb.addEventListener("change", updateShortcutSelect);
+  cb.addEventListener("change", () => {
+    const data = {};
+    document.querySelectorAll(".preset-filter").forEach(f => {
+      data[f.dataset.value] = f.checked;
+    });
+    localStorage.setItem("presetEnabled", JSON.stringify(data));
+
+    updateShortcutSelect();
+  });
 });
 
 updateShortcutSelect();
