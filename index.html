@@ -198,6 +198,24 @@ body.dark-mode label {
   color: #ddd;
 }
     
+/* =========================================
+   すべてのラジオボタンの ON 色を青に統一
+   （サブウィンドウ含む）
+   ========================================= */
+input[type="radio"],
+#settingsPanel input[type="radio"] {
+  accent-color: #1e88e5 !important;
+}
+
+/* =========================================
+   ダークモード時：内部色を暗くする
+   ========================================= */
+body.dark-mode input[type="radio"],
+body.dark-mode #settingsPanel input[type="radio"] {
+  accent-color: #1e88e5 !important; /* ON の青は維持 */
+  background-color: #222 !important; /* OFF の内部色 */
+  border: 1px solid #555 !important; /* 外枠 */
+}    
   </style>
 </head>
 
