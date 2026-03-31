@@ -157,6 +157,14 @@ body.dark-mode #settingsPanel button {
   color: #fff;
   border: 1px solid #666;
 }
+
+body.dark-mode #presetFilterList {
+  background:#222;
+  border-color:#444;
+}
+body.dark-mode #presetFilterList label {
+  color:#eee;
+}
   </style>
 </head>
 
@@ -415,6 +423,21 @@ body.dark-mode #settingsPanel button {
       <label><input type="radio" name="obstacle" value="on" checked> 表示</label><br>
       <label><input type="radio" name="obstacle" value="off"> 非表示</label>
     </div>
+
+    <div style="margin-bottom:12px;">
+  <div><strong>範囲確認プリセットの表示</strong></div>
+
+  <div id="presetFilterList" style="
+    max-height:150px;
+    overflow-y:auto;
+    padding:6px;
+    border:1px solid #ccc;
+    border-radius:4px;
+    background:#fafafa;
+  ">
+    <!-- JS でここにチェックボックス一覧を生成する -->
+  </div>
+</div>
 
     <button id="btnSettingsClose">閉じる</button>
   </div>
@@ -1829,6 +1852,61 @@ initTables();
 redraw();
 updateTablesFromPoints();
 updateCounts();
+
+// manual 以外のプリセットキー一覧を取得
+const presetKeys = Object.keys(rangePresets).filter(k => k !== "manual");
+
+const presetFilterList = document.getElementById("presetFilterList");
+
+// チェックボックス一覧を生成
+presetKeys.forEach(key => {
+  const label = document.createElement("label");
+  label.style.display = "block";
+  label.style.marginBottom = "4px";
+
+  label.innerHTML = `
+    <input type="checkbox" class="preset-filter" data-key="${key}" checked>
+    ${key}
+  `;
+
+  presetFilterList.appendChild(label);
+});
+
+// shortcutSelect を更新する関数
+function updateShortcutSelect() {
+  const filters = document.querySelectorAll(".preset-filter");
+  const allowed = ["manual"]; // manual は常に表示
+
+  filters.forEach(f => {
+    if (f.checked) allowed.push(f.dataset.key);
+  });
+
+  const current = shortcutSelect.value;
+
+  shortcutSelect.innerHTML = "";
+
+  allowed.forEach(key => {
+    const opt = document.createElement("option");
+    opt.value = key;
+    opt.textContent = key;
+    shortcutSelect.appendChild(opt);
+  });
+
+  if (allowed.includes(current)) {
+    shortcutSelect.value = current;
+  } else {
+    shortcutSelect.value = "manual";
+  }
+}
+
+// チェックボックス変更イベント
+document.querySelectorAll(".preset-filter").forEach(cb => {
+  cb.addEventListener("change", updateShortcutSelect);
+});
+
+// 初回更新
+updateShortcutSelect();
+
 </script>
   
 </body>
