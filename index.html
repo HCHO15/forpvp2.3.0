@@ -1950,6 +1950,18 @@ redraw();
 updateTablesFromPoints();
 updateCounts();
 
+ /* ▼ ダークモードの保存状態を読み込む */
+const savedDarkMode = localStorage.getItem("darkMode");
+if (savedDarkMode === "on") {
+  isDarkMode = true;
+  document.body.classList.add("dark-mode");
+  document.querySelector("input[name='darkMode'][value='on']").checked = true;
+} else {
+  isDarkMode = false;
+  document.body.classList.remove("dark-mode");
+  document.querySelector("input[name='darkMode'][value='off']").checked = true;
+}
+  
 const presetFilterList = document.getElementById("presetFilterList");
 
 // localStorage の保存データを取得
