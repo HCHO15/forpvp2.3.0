@@ -175,6 +175,29 @@ body.dark-mode #presetFilterList label {
 body.dark-mode #presetFilterList input[type="checkbox"] {
   accent-color: #ccc !important;
 }
+
+/* 通常モード：ON の色を青 (#1e88e5) に統一 */
+input[type="radio"] {
+  accent-color: #1e88e5;
+}
+
+/* ================================
+   ダークモード時のラジオボタン
+   ================================ */
+body.dark-mode input[type="radio"] {
+  /* ON の色は青のまま */
+  accent-color: #1e88e5;
+  
+  /* OFF のときの内部色を暗めにする */
+  background-color: #222;     /* ラジオボタンの背景 */
+  border: 1px solid #555;     /* 外枠を少し明るく */
+}
+
+/* ラジオボタンのラベル文字も暗い背景に馴染ませる */
+body.dark-mode label {
+  color: #ddd;
+}
+    
   </style>
 </head>
 
