@@ -424,6 +424,20 @@ body.dark-mode #presetFilterList label {
       <label><input type="radio" name="obstacle" value="off"> 非表示</label>
     </div>
 
+    <div style="margin-bottom:12px;">
+  <div><strong>範囲確認プリセットの表示</strong></div>
+
+  <div id="presetFilterList" style="
+    max-height:150px;
+    overflow-y:auto;
+    padding:6px;
+    border:1px solid #ccc;
+    border-radius:4px;
+    background:#fafafa;
+  ">
+  </div>
+</div>
+    
     <button id="btnSettingsClose">閉じる</button>
   </div>
 </div>
@@ -1837,6 +1851,64 @@ initTables();
 redraw();
 updateTablesFromPoints();
 updateCounts();
+
+// ▼ 設定ウィンドウのプリセット一覧生成
+const presetFilterList = document.getElementById("presetFilterList");
+
+Array.from(shortcutSelect.options).forEach(opt => {
+  if (opt.value === "manual") return;
+
+  const label = document.createElement("label");
+  label.style.display = "block";
+  label.style.marginBottom = "4px";
+
+  label.innerHTML = `
+    <input type="checkbox" class="preset-filter" data-value="${opt.value}" checked>
+    ${opt.textContent}
+  `;
+
+  presetFilterList.appendChild(label);
+});
+
+// ▼ チェック状態に応じて shortcutSelect を更新
+function updateShortcutSelect() {
+  const filters = document.querySelectorAll(".preset-filter");
+  const allowed = ["manual"];
+
+  filters.forEach(f => {
+    if (f.checked) allowed.push(f.dataset.value);
+  });
+
+  const current = shortcutSelect.value;
+  shortcutSelect.innerHTML = "";
+
+  // manual
+  const optManual = document.createElement("option");
+  optManual.value = "manual";
+  optManual.textContent = "手動";
+  shortcutSelect.appendChild(optManual);
+
+  // 元の並び順のまま追加
+  Array.from(presetFilterList.querySelectorAll("label")).forEach(label => {
+    const jp = label.textContent.trim();
+    const value = label.querySelector("input").dataset.value;
+
+    if (allowed.includes(value)) {
+      const opt = document.createElement("option");
+      opt.value = value;
+      opt.textContent = jp;
+      shortcutSelect.appendChild(opt);
+    }
+  });
+
+  shortcutSelect.value = allowed.includes(current) ? current : "manual";
+}
+
+document.querySelectorAll(".preset-filter").forEach(cb => {
+  cb.addEventListener("change", updateShortcutSelect);
+});
+
+updateShortcutSelect();
 
 </script>
   
