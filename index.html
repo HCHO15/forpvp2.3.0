@@ -1023,9 +1023,9 @@ const rangePresets = {
   
   mutsukiNewyearEX: { shape: "ringSector", center: "self", params: { inner: 550, outer: 1100, angleDeg: 90  } },
 
-  hibikiEX:      { shape: "hibikiEX", center: "nearestOpp", params: {} },
+  hibikiEX:      { shape: "hibiki", center: "nearestOpp", params: {} },
 
-  hibikiNS: { shape: "special", center: "self", params: {} },
+  hibikiNS: { shape: "hibiki", center: "self", params: {} },
 
   ioriEX:        { shape: "sector", center: "nearestOpp",
                    params: { radius: 250, angleDeg: 60 } },
@@ -1216,14 +1216,16 @@ function drawHibikiEX(centerB, angleDeg, color) {
 }
   
 function handleHibikiNS(self, scale) {
-  // ▼ 基準点とは逆の色（YuzuNS と同じ発想）
-  const fillColor = basePoint.color === "red"
-    ? COLOR_BLUE_LIGHT
-    : COLOR_RED_LIGHT;
 
-  // ▼ 基準点を含まない同色部隊の重心
-  const same = getPointsByColor(basePoint.color).filter(p => p.id !== basePoint.id);
-  const centroid = computeCentroid(same);
+  // ▼ 基準点とは逆の色
+  const color = (self.color === "red") ? COLOR_BLUE_LIGHT : COLOR_RED_LIGHT;
+
+  // ▼ 基準点（self）とは逆の部隊
+  const others = getOppositePointsByColor(self.color);
+  if (!others.length) return;
+
+  // ▼ 逆部隊の重心
+  const centroid = computeCentroid(others.filter(p => p.id !== 5));
   if (!centroid) return;
 
   // ▼ 重心 → 基準点 の角度
@@ -1234,10 +1236,8 @@ function handleHibikiNS(self, scale) {
   // ▼ 反時計回りに 30° 回転
   angleRad += (30 * Math.PI / 180);
 
-  const angleDeg = angleRad * 180 / Math.PI;
-
-  // ▼ ヒビキEXパターンを、基準点を中心に、計算した角度＆逆色で描画
-  drawHibikiEX(self, angleDeg, fillColor);
+  // ▼ ヒビキEXパターンを基準点中心に描画
+  drawHibikiEX(self, angleRad * 180 / Math.PI, color);
 }
   
 /* ▼ 特殊スキルのディスパッチテーブル */
