@@ -1495,11 +1495,6 @@ function drawRangeAttack() {
     return;
   }
 
-  if (preset.shape === "chain") {
-    drawChainBounce(self, preset.params);
-    return;
-  }
-
   // 特殊スキル
   if (specialHandlers[key]) {
     specialHandlers[key](self, scale, preset);
