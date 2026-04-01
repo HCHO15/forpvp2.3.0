@@ -1023,6 +1023,8 @@ const rangePresets = {
 
   hibikiEX:      { shape: "hibikiEX", center: "nearestOpp", params: {} },
 
+  hibikiNS:     { shape: "special" },
+
   ioriEX:        { shape: "sector", center: "nearestOpp",
                    params: { radius: 250, angleDeg: 60 } },
 
@@ -1211,6 +1213,28 @@ function drawHibikiEX(centerB, angleDeg, color) {
   ctx.restore();
 }
 
+function handleHibikiNS(self, scale) {
+
+  // ▼ 基準点とは逆の色
+  const color = (self.color === "red") ? COLOR_BLUE_LIGHT : COLOR_RED_LIGHT;
+
+  // ▼ 基準点を含まない部隊の重心
+  const same = getPointsByColor(self.color).filter(p => p.id !== self.id);
+  const centroid = computeCentroid(same);
+  if (!centroid) return;
+
+  // ▼ 重心 → 基準点 の角度
+  const dx = self.x - centroid.x;
+  const dy = self.y - centroid.y;
+  let angleRad = Math.atan2(dy, dx);
+
+  // ▼ 反時計回りに 30° 回転
+  angleRad += (30 * Math.PI / 180);
+
+  // ▼ ヒビキEXパターンを描画（EX の関数を流用）
+  drawHibikiEX(self, angleRad * 180 / Math.PI, color);
+}
+  
 /* ▼ 特殊スキルのディスパッチテーブル */
 const specialHandlers = {
   reisaMagicEX: handleReisaMagicEX,
@@ -1220,6 +1244,7 @@ const specialHandlers = {
   harunaNewyearEX: handleHarunaNewyearEX,
   yuzuNS: handleYuzuNS,
   shunEXAA: handleShunEXAA
+  hibikiNS: handleHibikiNS
 };
 
 function handleReisaMagicEX(self, scale) {
