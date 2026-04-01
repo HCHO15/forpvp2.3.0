@@ -1538,14 +1538,9 @@ function redraw() {
   applySubFunction();
 }
 
-/* ▼ ドラッグ処理を統合 */
-const dragState = {
-  active: false,
-  point: null,
-  offsetX: 0,
-  offsetY: 0
-};
-
+/* =========================
+   ① キャンバス操作系
+   ========================= */
 canvas.addEventListener("mousedown", e => {
   const rect = canvas.getBoundingClientRect();
   const cx = e.clientX - rect.left;
@@ -1600,22 +1595,6 @@ canvas.addEventListener("mousemove", e => {
   })
 );
 
-/* ▼ 半径関連イベントを統合 */
-radiusSlider.addEventListener("input", e => updateRadius(e.target.value));
-
-radiusSlider.addEventListener("wheel", e => {
-  e.preventDefault();
-  updateRadius(Number(radiusSlider.value) + (e.deltaY < 0 ? 10 : -10));
-});
-
-document.getElementById("radiusPlus").addEventListener("click", () =>
-  updateRadius(Number(radiusSlider.value) + 10)
-);
-
-document.getElementById("radiusMinus").addEventListener("click", () =>
-  updateRadius(Number(radiusSlider.value) - 10)
-);  
-  
 canvas.addEventListener("dblclick", e => {
   const rect = canvas.getBoundingClientRect();
   const cx = e.clientX - rect.left;
@@ -1635,6 +1614,9 @@ canvas.addEventListener("dblclick", e => {
 
 canvas.addEventListener("contextmenu", e => e.preventDefault());
 
+/* =========================
+   ② 点管理系
+   ========================= */
 btnColor.addEventListener("click", () => {
   if (currentColor === "red") {
     currentColor = "blue";
@@ -1645,7 +1627,6 @@ btnColor.addEventListener("click", () => {
   }
 });
 
-// ★ 召喚物OFF → id=5 を削除
 chkSummon.addEventListener("change", () => {
   if (!chkSummon.checked) {
     redPoints = redPoints.filter(p => p.id !== 5);
@@ -1658,7 +1639,7 @@ chkSummon.addEventListener("change", () => {
     updateCounts();
   }
 });
-  
+
 btnReset.addEventListener("click", () => {
   redPoints = [];
   bluePoints = [];
@@ -1668,6 +1649,9 @@ btnReset.addEventListener("click", () => {
   updateCounts();
 });
 
+/* =========================
+   ③ 保存・読み込み系
+   ========================= */
 btnSave.addEventListener("click", () => {
   const redArr = [1,2,3,4].flatMap(id => {
     const p = redPoints.find(pt => pt.id === id);
@@ -1692,98 +1676,6 @@ btnSave.addEventListener("click", () => {
   link.click();
 });
 
-modeSelect.addEventListener("change", () => {
-  modeIndex = parseInt(modeSelect.value, 10);
-
-  if (modeIndex === 4) {
-    rangeControls.style.display = "block";
-  } else {
-    rangeControls.style.display = "none";
-  }
-
-  redraw();
-});
-
-angleInput.addEventListener("input", () => {
-  shortcutSelect.value = "manual";
-  redraw();
-});
-  
-shortcutSelect.addEventListener("change", () => {
-  const key = shortcutSelect.value;
-  const preset = rangePresets[key];
-
-  if (key === "manual") {
-    redraw();
-    return;
-  }
-
-  if (preset.shape === "sector" && preset.params && preset.params.radius) {
-    radiusSlider.value = preset.params.radius;
-    angleInput.value = preset.params.angleDeg;
-    radiusValue.textContent = preset.params.radius;
-  }
-
-  redraw();
-});
-
-function updateCounts() {
-  countsDisplay.textContent =
-    `赤点：${redPoints.length}/${MAX_POINTS}　青点：${bluePoints.length}/${MAX_POINTS}`;
-}
-
-function getCurrentCoordinates() {
-  return {
-    red: [1,2,3,4].map(id => {
-      const p = redPoints.find(pt => pt.id === id);
-      return p ? { x: Math.round(p.x), y: Math.round(p.y) } : { x: 0, y: 0 };
-    }),
-    blue: [1,2,3,4].map(id => {
-      const p = bluePoints.find(pt => pt.id === id);
-      return p ? { x: Math.round(p.x), y: Math.round(p.y) } : { x: 0, y: 0 };
-    })
-  };
-}
-
-function applyPresetData(data) {
-  redPoints = [];
-  bluePoints = [];
-
-  data.red.forEach((p, i) => {
-    if (p.x !== 0 || p.y !== 0)
-      redPoints.push({ id: i+1, color: "red", x: p.x, y: p.y });
-  });
-
-  data.blue.forEach((p, i) => {
-    if (p.x !== 0 || p.y !== 0)
-      bluePoints.push({ id: i+1, color: "blue", x: p.x, y: p.y });
-  });
-
-  basePoint = null;
-  redraw();
-  updateTablesFromPoints();
-  updateCounts();
-}
-
-function loadPresets() {
-  document.querySelectorAll(".preset-block").forEach(block => {
-    const id = block.dataset.id;
-    const nameInput = block.querySelector(".preset-name");
-    const dataPre = block.querySelector(".preset-data");
-
-    const saved = localStorage.getItem("preset_" + id);
-    if (saved) {
-      const obj = JSON.parse(saved);
-      nameInput.value = obj.name;
-      dataPre.textContent = JSON.stringify(obj.data, null, 2);
-    }
-  });
-}
-
-function savePreset(id, name, data) {
-  localStorage.setItem("preset_" + id, JSON.stringify({ name, data }));
-}
-
 document.querySelectorAll(".preset-save").forEach(btn => {
   btn.addEventListener("click", e => {
     const block = e.target.closest(".preset-block");
@@ -1800,31 +1692,6 @@ document.querySelectorAll(".preset-save").forEach(btn => {
   });
 });
 
-// 設定ウィンドウ
-const settingsModal = document.getElementById("settingsModal");
-const btnSettings = document.getElementById("btnSettings");
-const btnSettingsClose = document.getElementById("btnSettingsClose");
-
-btnSettings.addEventListener("click", () => {
-  settingsModal.style.display = "flex";
-});
-
-btnSettingsClose.addEventListener("click", () => {
-  settingsModal.style.display = "none";
-});
-
-document.querySelectorAll("input[name='darkMode']").forEach(r =>
-  r.addEventListener("change", e => applyDarkMode(e.target.value === "on"))
-);
-
-// 遮蔽物表示切替
-document.querySelectorAll("input[name='obstacle']").forEach(r => {
-  r.addEventListener("change", e => {
-    isObstacleVisible = (e.target.value === "on");
-    redraw();
-  });
-});
-  
 document.querySelectorAll(".preset-apply").forEach(btn => {
   btn.addEventListener("click", e => {
     const block = e.target.closest(".preset-block");
@@ -1855,91 +1722,92 @@ document.querySelectorAll(".preset-delete").forEach(btn => {
   });
 });
 
-loadPresets();
-initTables();
-redraw();
-updateTablesFromPoints();
-updateCounts();
+/* =========================
+   ④ モード切替系
+   ========================= */
+modeSelect.addEventListener("change", () => {
+  modeIndex = parseInt(modeSelect.value, 10);
 
- /* ▼ ダークモードの保存状態を読み込む */
-const savedDarkMode = localStorage.getItem("darkMode");
-if (savedDarkMode === "on") {
-  isDarkMode = true;
-  document.body.classList.add("dark-mode");
-  document.querySelector("input[name='darkMode'][value='on']").checked = true;
-} else {
-  isDarkMode = false;
-  document.body.classList.remove("dark-mode");
-  document.querySelector("input[name='darkMode'][value='off']").checked = true;
-}
-  
-const presetFilterList = document.getElementById("presetFilterList");
+  if (modeIndex === 4) {
+    rangeControls.style.display = "block";
+  } else {
+    rangeControls.style.display = "none";
+  }
 
-// localStorage の保存データを取得
-const savedPresetEnabled = JSON.parse(localStorage.getItem("presetEnabled") || "{}");
-
-// shortcutSelect の option から一覧生成
-Array.from(shortcutSelect.options).forEach(opt => {
-  if (opt.value === "manual") return;
-
-  const key = opt.value;
-
-  // 保存があればそれを優先、なければデフォルト設定
-  const enabled = (key in savedPresetEnabled)
-    ? savedPresetEnabled[key]
-    : presetDefaultEnabled[key];
-
-  const label = document.createElement("label");
-  label.style.display = "block";
-  label.style.marginBottom = "4px";
-
-  label.innerHTML = `
-    <input type="checkbox" class="preset-filter" data-value="${key}" ${enabled ? "checked" : ""}>
-    ${opt.textContent}
-  `;
-
-  presetFilterList.appendChild(label);
+  redraw();
 });
 
-/* ▼▼▼ 追加：チェック変更時に localStorage 保存 ▼▼▼ */
-function updateShortcutSelect() {
-  const filters = document.querySelectorAll(".preset-filter");
-  const allowed = ["manual"];
+shortcutSelect.addEventListener("change", () => {
+  const key = shortcutSelect.value;
+  const preset = rangePresets[key];
 
-  filters.forEach(f => {
-    if (f.checked) allowed.push(f.dataset.value);
-  });
+  if (key === "manual") {
+    redraw();
+    return;
+  }
 
-  const current = shortcutSelect.value;
-  shortcutSelect.innerHTML = "";
+  if (preset.shape === "sector" && preset.params && preset.params.radius) {
+    radiusSlider.value = preset.params.radius;
+    angleInput.value = preset.params.angleDeg;
+    radiusValue.textContent = preset.params.radius;
+  }
 
-  // manual
-  const optManual = document.createElement("option");
-  optManual.value = "manual";
-  optManual.textContent = "手動";
-  shortcutSelect.appendChild(optManual);
+  redraw();
+});
 
-  // 元の並び順のまま追加
-  Array.from(presetFilterList.querySelectorAll("label")).forEach(label => {
-    const jp = label.textContent.trim();
-    const value = label.querySelector("input").dataset.value;
+angleInput.addEventListener("input", () => {
+  shortcutSelect.value = "manual";
+  redraw();
+});
 
-    if (allowed.includes(value)) {
-      const opt = document.createElement("option");
-      opt.value = value;
-      opt.textContent = jp;
-      shortcutSelect.appendChild(opt);
-    }
-  });
+/* 半径関連イベント（統合版） */
+radiusSlider.addEventListener("input", e => updateRadius(e.target.value));
 
-  shortcutSelect.value = allowed.includes(current) ? current : "manual";
-}
+radiusSlider.addEventListener("wheel", e => {
+  e.preventDefault();
+  updateRadius(Number(radiusSlider.value) + (e.deltaY < 0 ? 10 : -10));
+});
 
-document.querySelectorAll(".preset-filter").forEach(cb =>
-  cb.addEventListener("change", savePresetFilter)
+document.getElementById("radiusPlus").addEventListener("click", () =>
+  updateRadius(Number(radiusSlider.value) + 10)
 );
 
-updateShortcutSelect();
+document.getElementById("radiusMinus").addEventListener("click", () =>
+  updateRadius(Number(radiusSlider.value) - 10)
+);
+
+/* =========================
+   ⑤ 設定系
+   ========================= */
+btnSettings.addEventListener("click", () => {
+  settingsModal.style.display = "flex";
+});
+
+btnSettingsClose.addEventListener("click", () => {
+  settingsModal.style.display = "none";
+});
+
+document.querySelectorAll("input[name='darkMode']").forEach(r =>
+  r.addEventListener("change", e => applyDarkMode(e.target.value === "on"))
+);
+
+document.querySelectorAll("input[name='obstacle']").forEach(r => {
+  r.addEventListener("change", e => {
+    isObstacleVisible = (e.target.value === "on");
+    redraw();
+  });
+});
+
+/* =========================
+   ⑥ テーブル入力系
+   ========================= */
+document.querySelectorAll(".coord-input").forEach(input =>
+  input.addEventListener("change", onCoordInputChange)
+);
+
+document.querySelectorAll("input[type=radio]").forEach(r =>
+  r.addEventListener("change", onBaseSelect)
+);  
 
 </script>
   
