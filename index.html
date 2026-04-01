@@ -47,6 +47,10 @@
       cursor: crosshair;
     }
 
+    #mainCanvas {
+      touch-action: none;
+    }
+    
     .counts {
       font-size: 13px;
       margin-left: 4px;
@@ -168,6 +172,57 @@ body.dark-mode #settingsPanel input[type="radio"] {
   accent-color: #1e88e5 !important;
   background-color: #222 !important;
   border: 1px solid #555 !important;
+}
+    
+@media (max-width: 600px) {
+
+  body {
+    padding: 8px;
+  }
+
+  .container {
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .left-panel {
+    width: 100%;
+  }
+
+  #mainCanvas {
+    width: 100% !important;
+    height: auto !important;
+  }
+
+  .controls {
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+
+  #rangeControls {
+    font-size: 11px;
+  }
+
+  #rangeControls > div {
+    flex-wrap: wrap;
+  }
+
+  #shortcutSelect {
+    max-width: 160px;
+  }
+
+  .right-panel {
+    width: 100%;
+    min-width: unset;
+  }
+
+  table {
+    font-size: 10px;
+  }
+
+  .preset-actions {
+    flex-wrap: wrap;
+  }
 }
     
   </style>
@@ -1680,6 +1735,100 @@ canvas.addEventListener("mousemove", e => {
   })
 );
 
+/* =========================
+   スマホ版タッチ操作（タップ＝追加、ダブルタップ＝削除、ドラッグ＝移動）
+   ========================= */
+
+let lastTapTime = 0;
+let touchMoved = false;
+let touchStartX = 0;
+let touchStartY = 0;
+
+canvas.addEventListener("touchstart", e => {
+  e.preventDefault(); // スクロール防止
+
+  const t = e.touches[0];
+  const rect = canvas.getBoundingClientRect();
+  const cx = t.clientX - rect.left;
+  const cy = t.clientY - rect.top;
+
+  touchMoved = false;
+  touchStartX = cx;
+  touchStartY = cy;
+
+  const now = Date.now();
+  const hit = findPointAtCanvasPos(cx, cy);
+
+  // ▼ ダブルタップ判定（300ms以内）
+  if (now - lastTapTime < 300) {
+    if (hit) {
+      removePoint(hit);
+      redraw();
+      updateTablesFromPoints();
+      updateCounts();
+    }
+    lastTapTime = 0;
+    return;
+  }
+
+  lastTapTime = now;
+
+  // ▼ ドラッグ開始
+  if (hit) {
+    const logical = canvasToLogical(cx, cy);
+    dragState.active = true;
+    dragState.point = hit;
+    dragState.offsetX = hit.x - logical.x;
+    dragState.offsetY = hit.y - logical.y;
+  }
+});
+
+canvas.addEventListener("touchmove", e => {
+  e.preventDefault(); // スクロール防止
+
+  if (!dragState.active || !dragState.point) return;
+
+  touchMoved = true;
+
+  const t = e.touches[0];
+  const rect = canvas.getBoundingClientRect();
+  const cx = t.clientX - rect.left;
+  const cy = t.clientY - rect.top;
+
+  const logical = canvasToLogical(cx, cy);
+  dragState.point.x = logical.x + dragState.offsetX;
+  dragState.point.y = logical.y + dragState.offsetY;
+
+  redraw();
+  updateTablesFromPoints();
+});
+
+canvas.addEventListener("touchend", e => {
+  e.preventDefault();
+
+  // ▼ ドラッグしていない → タップ扱い
+  if (!touchMoved) {
+    const rect = canvas.getBoundingClientRect();
+    const t = e.changedTouches[0];
+    const cx = t.clientX - rect.left;
+    const cy = t.clientY - rect.top;
+
+    const hit = findPointAtCanvasPos(cx, cy);
+
+    // ダブルタップで削除済みなら追加しない
+    if (!hit) {
+      const logical = canvasToLogical(cx, cy);
+      addPoint(currentColor, logical.x, logical.y);
+      redraw();
+      updateTablesFromPoints();
+      updateCounts();
+    }
+  }
+
+  dragState.active = false;
+  dragState.point = null;
+});
+
 canvas.addEventListener("dblclick", e => {
   const rect = canvas.getBoundingClientRect();
   const cx = e.clientX - rect.left;
@@ -1955,6 +2104,23 @@ document.querySelectorAll(".preset-filter").forEach(cb =>
 updateTablesFromPoints();  
 updateCounts?.();  // updateCounts が定義済みなら呼ぶ
 redraw();
+
+function resizeCanvasForMobile() {
+  if (window.innerWidth <= 600) {
+    const w = document.getElementById("canvasWrapper").clientWidth - 4;
+    const ratio = canvas.height / canvas.width;
+    canvas.width = w;
+    canvas.height = w * ratio;
+  } else {
+    canvas.width = 800;
+    canvas.height = 520;
+  }
+  redraw();
+}
+
+window.addEventListener("resize", resizeCanvasForMobile);
+resizeCanvasForMobile();
+  
 </script>
   
 </body>
