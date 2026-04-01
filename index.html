@@ -19,6 +19,7 @@
     .container {
       display: flex;
       gap: 16px;
+      width: 100%;  
     }
 
     .left-panel {
@@ -181,12 +182,12 @@ body.dark-mode #settingsPanel input[type="radio"] {
   }
 
   .container {
-    flex-direction: column;
-    gap: 8px;
+    flex-direction: column !important;
+    width: 100% !important;
   }
 
   .left-panel {
-    width: 100%;
+    width: 100% !important;
   }
 
   #mainCanvas {
@@ -212,8 +213,8 @@ body.dark-mode #settingsPanel input[type="radio"] {
   }
 
   .right-panel {
-    width: 100%;
-    min-width: unset;
+    width: 100% !important;
+    min-width: unset !important;;
   }
 
   table {
