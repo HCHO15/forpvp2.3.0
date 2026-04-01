@@ -1233,8 +1233,8 @@ function handleHibikiNS(self, scale) {
   const dy = self.y - centroid.y;
   let angleRad = Math.atan2(dy, dx);
 
-  // ▼ 反時計回りに 30° 回転
-  angleRad += (30 * Math.PI / 180);
+  // ▼ 反時計回りに回転
+  angleRad += (10 * Math.PI / 180);
 
   // ▼ ヒビキEXパターンを基準点中心に描画
   drawHibikiEX(self, angleRad * 180 / Math.PI, color);
