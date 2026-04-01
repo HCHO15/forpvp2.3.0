@@ -487,11 +487,6 @@ let currentColor = "red";
 let redPoints = [];
 let bluePoints = [];
 
-let draggingPoint = null;
-let dragOffsetX = 0;
-let dragOffsetY = 0;
-let isDragging = false;
-
 let basePoint = null;
 
 let isDarkMode = false;
@@ -1546,24 +1541,13 @@ function redraw() {
   applySubFunction();
 }
 
-canvas.addEventListener("dblclick", e => {
-  const rect = canvas.getBoundingClientRect();
-  const cx = e.clientX - rect.left;
-  const cy = e.clientY - rect.top;
-
-  const hit = findPointAtCanvasPos(cx, cy);
-  if (!hit) return;
-
-  basePoint = { color: hit.color, id: hit.id };
-
-  const selector = `input[type=radio][data-color="${hit.color}"][data-id="${hit.id}"]`;
-  const radio = document.querySelector(selector);
-  if (radio) radio.checked = true;
-
-  redraw();
-});
-
-canvas.addEventListener("contextmenu", e => e.preventDefault());
+/* ▼ ドラッグ処理を統合 */
+const dragState = {
+  active: false,
+  point: null,
+  offsetX: 0,
+  offsetY: 0
+};
 
 canvas.addEventListener("mousedown", e => {
   const rect = canvas.getBoundingClientRect();
@@ -1575,10 +1559,10 @@ canvas.addEventListener("mousedown", e => {
   if (e.button === 0) {
     if (hit) {
       const logical = canvasToLogical(cx, cy);
-      dragOffsetX = hit.x - logical.x;
-      dragOffsetY = hit.y - logical.y;
-      draggingPoint = hit;
-      isDragging = true;
+      dragState.active = true;
+      dragState.point = hit;
+      dragState.offsetX = hit.x - logical.x;
+      dragState.offsetY = hit.y - logical.y;
       return;
     }
 
@@ -1598,29 +1582,61 @@ canvas.addEventListener("mousedown", e => {
 });
 
 canvas.addEventListener("mousemove", e => {
-  if (!isDragging || !draggingPoint) return;
+  if (!dragState.active || !dragState.point) return;
 
   const rect = canvas.getBoundingClientRect();
   const cx = e.clientX - rect.left;
   const cy = e.clientY - rect.top;
 
   const logical = canvasToLogical(cx, cy);
-  draggingPoint.x = logical.x + dragOffsetX;
-  draggingPoint.y = logical.y + dragOffsetY;
+  dragState.point.x = logical.x + dragState.offsetX;
+  dragState.point.y = logical.y + dragState.offsetY;
 
   redraw();
   updateTablesFromPoints();
 });
 
-canvas.addEventListener("mouseup", () => {
-  isDragging = false;
-  draggingPoint = null;
+["mouseup", "mouseleave"].forEach(ev =>
+  canvas.addEventListener(ev, () => {
+    dragState.active = false;
+    dragState.point = null;
+  })
+);
+
+/* ▼ 半径関連イベントを統合 */
+radiusSlider.addEventListener("input", e => updateRadius(e.target.value));
+
+radiusSlider.addEventListener("wheel", e => {
+  e.preventDefault();
+  updateRadius(Number(radiusSlider.value) + (e.deltaY < 0 ? 10 : -10));
 });
 
-canvas.addEventListener("mouseleave", () => {
-  isDragging = false;
-  draggingPoint = null;
+document.getElementById("radiusPlus").addEventListener("click", () =>
+  updateRadius(Number(radiusSlider.value) + 10)
+);
+
+document.getElementById("radiusMinus").addEventListener("click", () =>
+  updateRadius(Number(radiusSlider.value) - 10)
+);  
+  
+canvas.addEventListener("dblclick", e => {
+  const rect = canvas.getBoundingClientRect();
+  const cx = e.clientX - rect.left;
+  const cy = e.clientY - rect.top;
+
+  const hit = findPointAtCanvasPos(cx, cy);
+  if (!hit) return;
+
+  basePoint = { color: hit.color, id: hit.id };
+
+  const selector = `input[type=radio][data-color="${hit.color}"][data-id="${hit.id}"]`;
+  const radio = document.querySelector(selector);
+  if (radio) radio.checked = true;
+
+  redraw();
 });
+
+canvas.addEventListener("contextmenu", e => e.preventDefault());
 
 btnColor.addEventListener("click", () => {
   if (currentColor === "red") {
