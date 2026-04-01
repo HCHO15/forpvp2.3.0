@@ -224,11 +224,11 @@ body.dark-mode #settingsPanel input[type="radio"] {
       <option value="aruNewyearEX">アル（正月）EX</option>
       <option value="ioriEX">イオリEX</option>
       <option value="irihaEXNS">イロハEXNS</option>
-      <option value="kanoeEX">カノエEX</option>
+      <option value="kanoeNS">カノエNS</option>
       <option value="kirinoNS">キリノNS※単体攻撃</option>
       <option value="koharuMizugiEX">コハル（水着）EX</option>
       <option value="konokaEX">コノカEX</option>
-      <option value="koharuNS">コユキNS</option>
+      <option value="koyukiNS">コユキNS</option>
       <option value="sakiEX">サキEX</option>
       <option value="sayaCasualEX">サヤ（私服）EX</option>
       <option value="shirokoRidingNS">シロコ（ライディング）NS</option>
@@ -868,7 +868,7 @@ const presetDefaultEnabled = {
   aruNewyearEX: false,
   irohaaEXNS: false,
   ioriEX: false,
-  kanoeEX: true,
+  kanoeNS: true,
   kirinoNS: false,
   koharuMizugiEX: false,
   konokaEX: false,
@@ -890,7 +890,7 @@ const presetDefaultEnabled = {
   harunaNewyearEX: false,
   hinaDressEX: true,
   hinaMizugiEX: true,
-  hinataMizugiNS: true,
+  hinataMizugiNS: false,
   hibikiEX: true,
   hihumiEX: false,
   hiyoriMizugiEX: false,
@@ -938,7 +938,7 @@ const rangePresets = {
   meguAA:        { shape: "sector", center: "self",       params: { radius: 500, angleDeg: 45  } },
   meguEX:        { shape: "sector", center: "self",       params: { radius: 600, angleDeg: 45  } },
   kotoriCheerEX: { shape: "sector", center: "self",       params: { radius: 1000, angleDeg: 60  } },
-  kanoeEX:       { shape: "sector", center: "nearestOpp",params: { radius: 250, angleDeg: 360 } },
+  kanoeNS:       { shape: "sector", center: "nearestOpp",params: { radius: 250, angleDeg: 360 } },
   kirinoNS:      { shape: "kirinoNS", center: "self", params: {} },
 
   junkoEX:       { shape: "rect", center: "nearestOpp", params: { width: 900,  height: 150, mode: "fromSelf" } },
