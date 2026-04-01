@@ -1214,7 +1214,12 @@ function drawHibikiEX(centerB, angleDeg, color) {
 
   ctx.restore();
 }
-
+  
+function getNearestOppositePoint(self) {
+  const others = getOppositePointsByColor(self.color);
+  if (!others.length) return null;
+  return findNearest(self, others);
+}
 function handleHibikiNS(self, scale) {
 
   // ▼ 基準点とは逆の色
