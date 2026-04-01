@@ -1347,8 +1347,12 @@ function handleComboPreset(self, scale, preset) {
     const p2 = rangePresets[k];
     if (!p2) return;
 
-    const center2 = resolveCenter(self, p2.center);
-    const direction2 = resolveDirection(self, center2, p2.center);
+    // ★ combo は常に self を中心にする（nearestOpp を使わない）
+    const center2 = self;
+
+    // 向きだけは元の仕様に従う
+    const direction2 = resolveDirection(self, center2, "self");
+
     const { cx: cx2, cy: cy2 } = logicalToCanvas(center2.x, center2.y);
     const sp = scaledParams(p2.params, scale);
 
