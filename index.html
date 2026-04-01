@@ -1215,18 +1215,14 @@ function drawHibikiEX(centerB, angleDeg, color) {
   ctx.restore();
 }
   
-function getNearestOppositePoint(self) {
-  const others = getOppositePointsByColor(self.color);
-  if (!others.length) return null;
-  return findNearest(self, others);
-}
 function handleHibikiNS(self, scale) {
+  // ▼ 基準点とは逆の色（YuzuNS と同じ発想）
+  const fillColor = basePoint.color === "red"
+    ? COLOR_BLUE_LIGHT
+    : COLOR_RED_LIGHT;
 
-  // ▼ 基準点とは逆の色
-  const color = (self.color === "red") ? COLOR_BLUE_LIGHT : COLOR_RED_LIGHT;
-
-  // ▼ 基準点を含まない部隊の重心
-  const same = getPointsByColor(self.color).filter(p => p.id !== self.id);
+  // ▼ 基準点を含まない同色部隊の重心
+  const same = getPointsByColor(basePoint.color).filter(p => p.id !== basePoint.id);
   const centroid = computeCentroid(same);
   if (!centroid) return;
 
@@ -1238,8 +1234,10 @@ function handleHibikiNS(self, scale) {
   // ▼ 反時計回りに 30° 回転
   angleRad += (30 * Math.PI / 180);
 
-  // ▼ ヒビキEXパターンを描画（EX の関数を流用）
-  drawHibikiEX(self, angleRad * 180 / Math.PI, color);
+  const angleDeg = angleRad * 180 / Math.PI;
+
+  // ▼ ヒビキEXパターンを、基準点を中心に、計算した角度＆逆色で描画
+  drawHibikiEX(self, angleDeg, fillColor);
 }
   
 /* ▼ 特殊スキルのディスパッチテーブル */
