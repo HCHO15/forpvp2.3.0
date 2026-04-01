@@ -492,6 +492,13 @@ let basePoint = null;
 let isDarkMode = false;
 let isObstacleVisible = true;
 
+const dragState = {
+  active: false,
+  point: null,
+  offsetX: 0,
+  offsetY: 0
+};
+  
 /* ▼ 半径変更処理を統合 */
 function updateRadius(newValue) {
   const v = Math.min(1200, Math.max(50, Number(newValue)));
@@ -1798,17 +1805,9 @@ document.querySelectorAll("input[name='obstacle']").forEach(r => {
   });
 });
 
-/* =========================
-   ⑥ テーブル入力系
-   ========================= */
-document.querySelectorAll(".coord-input").forEach(input =>
-  input.addEventListener("change", onCoordInputChange)
-);
-
-document.querySelectorAll("input[type=radio]").forEach(r =>
-  r.addEventListener("change", onBaseSelect)
-);  
-
+initTables();
+updateCounts?.();  // updateCounts が定義済みなら呼ぶ
+redraw();
 </script>
   
 </body>
