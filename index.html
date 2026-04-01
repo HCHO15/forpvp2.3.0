@@ -2088,6 +2088,8 @@ Array.from(shortcutSelect.options).forEach(opt => {
   presetFilterList.appendChild(label);
 });
 
+updateShortcutSelect();
+  
 function updateShortcutSelect() {
   const filters = document.querySelectorAll(".preset-filter");
   const allowed = ["manual"];
