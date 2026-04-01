@@ -1141,195 +1141,133 @@ function drawHibikiEX(centerB, angleDeg, color) {
   ctx.restore();
 }
 
-function drawRangeAttack() {
-  if (!basePoint) return;
+/* ▼ 特殊スキルのディスパッチテーブル */
+const specialHandlers = {
+  reisaMagicEX: handleReisaMagicEX,
+  kirinoNS: handleKirinoNS,
+  hibikiEX: handleHibikiEXWrapper,
+  marinaEX: handleMarinaEX,
+  harunaNewyearEX: handleHarunaNewyearEX,
+  yuzuNS: handleYuzuNS,
+  shunEXAA: handleShunEXAA
+};
 
-  const self = getBaseSelf();
-  if (!self) return;
-
-  const key = shortcutSelect.value;
-  let preset = rangePresets[key];
-
-  const scale = 129 / 350;
-
-  // 手動
-  if (key === "manual") {
-    const center = self;
-    const direction = getSectorDirection(self, self.color);
-    const { cx, cy } = logicalToCanvas(center.x, center.y);
-    const radius = Number(radiusSlider.value) * scale;
-    const angleDeg = Number(angleInput.value);
-
-    drawSectorRaw({
-      cx,
-      cy,
-      radius,
-      angleDeg,
-      directionRad: direction,
-      color: getLightColorByBase()
-    });
-    return;
-  }
-  
-  // レイサ（マジカル）EX：基準点と同色の☆点を中心に半径200の円を描画
-if (key === "reisaMagicEX") {
-  const color = basePoint.color;
-  const arr = getPointsByColor(color);
-
-  // ☆点（id=5）を探す
+function handleReisaMagicEX(self, scale) {
+  const arr = getPointsByColor(basePoint.color);
   const summon = arr.find(p => p.id === 5);
-
-  // ☆点がいなければ描画しない
   if (!summon) return;
 
   const { cx, cy } = logicalToCanvas(summon.x, summon.y);
-  const radius = 200 * scale;
-
-  // 既存の扇形描画を応用（360°なので円になる）
   drawSectorRaw({
-    cx,
-    cy,
-    radius,
+    cx, cy,
+    radius: 200 * scale,
     angleDeg: 360,
-    directionRad: 0,          // 360°なので向きは不要
+    directionRad: 0,
     color: getLightColorByBase()
   });
-
-  return;
 }
-  
-  // キリノNS：基準点から距離950*scale以内で最も遠い異色点を強調
-if (key === "kirinoNS") {
+
+function handleKirinoNS(self, scale) {
   const others = getOppositePointsByColor(basePoint.color);
   const base = self;
-
   const limit = 950 * scale;
 
-  // ★ 距離制限 950 の点線円（かなり薄い色）
   const limitColor = basePoint.color === "red"
     ? "rgba(229,57,53,0.55)"
     : "rgba(30,136,229,0.55)";
   drawDashedCircleLogical(base, limit, limitColor);
 
-  // 距離limit以内の異色点を抽出
   const candidates = others
     .map(p => ({ p, d: Math.sqrt(dist2(base, p)) }))
     .filter(o => o.d <= limit);
 
-  if (candidates.length === 0) return;
+  if (!candidates.length) return;
 
-  // 最も遠い異色点を選ぶ
   let farthest = candidates[0];
   for (let i = 1; i < candidates.length; i++) {
-    if (candidates[i].d > farthest.d) {
-      farthest = candidates[i];
-    }
+    if (candidates[i].d > farthest.d) farthest = candidates[i];
   }
 
-  // ★ 強調円は基準点と同じ色
-  const highlightColor = getLightColorByBase();
-
-  drawHighlightCircle(farthest.p, highlightColor);
-
-  return;
+  drawHighlightCircle(farthest.p, getLightColorByBase());
 }
-  
-    // ヒビキEX：部隊重心→最も近い異色点の向き
-  if (key === "hibikiEX") {
-    const same = getPointsByColor(basePoint.color);
-    const others = getOppositePointsByColor(basePoint.color);
-    const baseCenter = computeCentroid(same.filter(p => p.id !== 5));
-    if (!baseCenter || !others.length) return;
-    const nearestEnemy = findNearest(baseCenter, others);
-    if (!nearestEnemy) return;
 
-    // 基準点部隊重心 → 最寄り異色点 のベクトル（論理座標系：y上向きが正）
-    const dx = nearestEnemy.x - baseCenter.x;
-    const dy = nearestEnemy.y - baseCenter.y;
-    const angleDeg = Math.atan2(dy, dx) * 180 / Math.PI;
+function handleHibikiEXWrapper(self, scale) {
+  const same = getPointsByColor(basePoint.color);
+  const others = getOppositePointsByColor(basePoint.color);
+  const baseCenter = computeCentroid(same.filter(p => p.id !== 5));
+  if (!baseCenter || !others.length) return;
 
-    // 中心＝最寄り異色点、A→B の向きが上記ベクトルと一致
-    drawHibikiEX(nearestEnemy, angleDeg, getLightColorByBase());
-    return;
-  }
+  const nearestEnemy = findNearest(baseCenter, others);
+  if (!nearestEnemy) return;
 
-  // マリナEX：自分の後方にオフセットしたリング扇形
-  if (key === "marinaEX") {
-    const target = getNearestOppositePoint(self);
-    if (!target) return;
+  const dx = nearestEnemy.x - baseCenter.x;
+  const dy = nearestEnemy.y - baseCenter.y;
+  const angleDeg = Math.atan2(dy, dx) * 180 / Math.PI;
 
-    const p = scaledParams(preset.params, scale);
-    const baseAngle = Math.atan2(target.y - self.y, target.x - self.x);
-    const oppositeAngle = baseAngle + Math.PI;
+  drawHibikiEX(nearestEnemy, angleDeg, getLightColorByBase());
+}
 
-    const centerX = self.x + Math.cos(oppositeAngle) * p.offset;
-    const centerY = self.y + Math.sin(oppositeAngle) * p.offset;
-    const { cx, cy } = logicalToCanvas(centerX, centerY);
+function handleMarinaEX(self, scale, preset) {
+  const target = getNearestOppositePoint(self);
+  if (!target) return;
 
-    drawRingSectorRaw({
-      cx,
-      cy,
-      inner: p.inner,
-      outer: p.outer,
-      angleDeg: p.angleDeg,
-      directionRad: baseAngle,
-      color: getLightColorByBase()
-    });
-    return;
-  }
+  const p = scaledParams(preset.params, scale);
+  const baseAngle = Math.atan2(target.y - self.y, target.x - self.x);
+  const oppositeAngle = baseAngle + Math.PI;
 
-// ハルナ（正月）EX：距離950以内の異色点に円を重ね描画
-if (key === "harunaNewyearEX") {
+  const centerX = self.x + Math.cos(oppositeAngle) * p.offset;
+  const centerY = self.y + Math.sin(oppositeAngle) * p.offset;
+  const { cx, cy } = logicalToCanvas(centerX, centerY);
+
+  drawRingSectorRaw({
+    cx, cy,
+    inner: p.inner,
+    outer: p.outer,
+    angleDeg: p.angleDeg,
+    directionRad: baseAngle,
+    color: getLightColorByBase()
+  });
+}
+
+function handleHarunaNewyearEX(self, scale) {
   const others = getOppositePointsByColor(basePoint.color);
   const base = self;
-
-   // ★ 距離制限 950 の点線円（かなり薄い色）
   const limitR = 950 * scale;
+
   const limitColor = basePoint.color === "red"
     ? "rgba(229,57,53,0.55)"
     : "rgba(30,136,229,0.55)";
   drawDashedCircleLogical(base, limitR, limitColor);
 
-  // 距離950以内の異色点を抽出し、近い順に並べる（距離にも scale を適用）
   const filtered = others
     .map(p => ({ p, d2: dist2(base, p) }))
     .filter(o => Math.sqrt(o.d2) <= 950 * scale)
     .sort((a, b) => a.d2 - b.d2)
     .slice(0, 5);
 
-  const n = filtered.length;
-  if (n === 0) return;
+  if (!filtered.length) return;
 
   const baseAlpha = 0.55;
   const step = 0.15;
   const maxAlpha = 0.85;
 
-  // 「濃さの段階」と「円周の本数」をリンクさせる
-  // level: 0 → baseAlpha, 1 → baseAlpha+step, 2 → baseAlpha+2step, 4 → baseAlpha+4step(ただしmaxAlphaで頭打ち)
   const levels = [];
-  if (n === 1) {
-    levels.push(4); // 最も近い1体だけ、段階4
-  } else if (n === 2) {
-    levels.push(2, 1); // 近い順に 2,1
-  } else if (n === 3) {
-    levels.push(1, 1, 0); // 近い順に 1,1,0
-  } else if (n === 4) {
-    levels.push(1, 0, 0, 0); // 近い順に 1,0,0,0
-  } else { // n >= 5
-    for (let i = 0; i < n; i++) levels.push(0); // 全部段階0
-  }
+  const n = filtered.length;
 
-  const alphas = levels.map(l =>
-    Math.min(baseAlpha + step * l, maxAlpha)
-  );
+  if (n === 1) levels.push(4);
+  else if (n === 2) levels.push(2, 1);
+  else if (n === 3) levels.push(1, 1, 0);
+  else if (n === 4) levels.push(1, 0, 0, 0);
+  else for (let i = 0; i < n; i++) levels.push(0);
+
+  const alphas = levels.map(l => Math.min(baseAlpha + step * l, maxAlpha));
 
   filtered.forEach((o, i) => {
     const p = o.p;
     const { cx, cy } = logicalToCanvas(p.x, p.y);
     const alpha = alphas[i];
-    const level = levels[i]; // 円周の本数に使う
+    const level = levels[i];
 
-    // 塗りつぶし（色は従来のライトカラーをベースに α だけ変える）
     const fillColor = basePoint.color === "red"
       ? `rgba(229,57,53,${alpha})`
       : `rgba(30,136,229,${alpha})`;
@@ -1340,12 +1278,11 @@ if (key === "harunaNewyearEX") {
     ctx.arc(cx, cy, 200 * scale, 0, Math.PI * 2);
     ctx.fill();
 
-    // 円周（濃い黄色）を「段階」に応じた本数だけ描画
-    ctx.strokeStyle = "rgba(255, 235, 59, 0.95)"; // 濃い黄色
-    ctx.lineWidth = 2; // とにかく細く
+    ctx.strokeStyle = "rgba(255, 235, 59, 0.95)";
+    ctx.lineWidth = 2;
 
-    const ringCount = 1 + level; // 段階0→1本, 1→2本, 2→3本, 4→5本 など
-    const ringGap = 10 * scale;   // 円周同士の間隔
+    const ringCount = 1 + level;
+    const ringGap = 10 * scale;
 
     for (let r = 0; r < ringCount; r++) {
       ctx.beginPath();
@@ -1355,34 +1292,31 @@ if (key === "harunaNewyearEX") {
 
     ctx.restore();
   });
-
-  return;
 }
 
-  // ユズNS※：基準点中心に半径100の円（塗りつぶしは異色）
-if (key === "yuzuNS") {
-  const center = self;
-  const { cx, cy } = logicalToCanvas(center.x, center.y);
-
-  // 基準点とは異なる色を使う
+function handleYuzuNS(self, scale) {
+  const { cx, cy } = logicalToCanvas(self.x, self.y);
   const fillColor = basePoint.color === "red"
-    ? COLOR_BLUE_LIGHT   // 赤基準 → 青塗り
-    : COLOR_RED_LIGHT;   // 青基準 → 赤塗り
+    ? COLOR_BLUE_LIGHT
+    : COLOR_RED_LIGHT;
 
   ctx.save();
   ctx.fillStyle = fillColor;
   ctx.beginPath();
-  ctx.arc(cx, cy, 100 * scale, 0, Math.PI * 2); // ★ 半径100に変更
+  ctx.arc(cx, cy, 100 * scale, 0, Math.PI * 2);
   ctx.fill();
   ctx.restore();
-
-  return;
 }
   
-// 直線系（rect）
-if (preset.shape === "rect") {
+function handleShunEXAA(self, scale) {
+  const radius = 933 * scale;
+  const color = basePoint.color === "red"
+    ? "rgba(229,57,53,0.55)"
+    : "rgba(30,136,229,0.55)";
+  drawDashedCircleLogical(self, radius, color);
+}
 
-  // ★ combo の内部キーから呼ばれた場合は drawComboRect が処理するのでここは通らない
+function handleRectPreset(self, scale, preset, key) {
   const p = scaledParams(preset.params, scale);
   const mode = p.mode || "center";
 
@@ -1406,11 +1340,9 @@ if (preset.shape === "rect") {
   );
 
   drawRotatedRect(cx, cy, p.width, p.height, angle, getLightColorByBase(), mode);
-  return;
 }
 
-// ★ rect / sector 両対応 combo（ここが新しい本命）
-if (preset.shape === "combo") {
+function handleComboPreset(self, scale, preset) {
   preset.keys.forEach(k => {
     const p2 = rangePresets[k];
     if (!p2) return;
@@ -1436,28 +1368,14 @@ if (preset.shape === "combo") {
       });
     }
   });
-  return;
 }
 
-  // 通常の円形・扇形・リング扇形
+function handleNormalPreset(self, scale, preset) {
   const center = resolveCenter(self, preset.center);
   const direction = resolveDirection(self, center, preset.center);
   const { cx, cy } = logicalToCanvas(center.x, center.y);
   const p = scaledParams(preset.params, scale);
 
-// ★ シュンEXAA：半径933の点線円を描画（塗りつぶしなし）
- if (key === "shunEXAA") {
-  const center = self;
-  const radius = 933 * scale;
-
-  const color = basePoint.color === "red"
-    ? "rgba(229,57,53,0.55)"   // かなり薄い赤
-    : "rgba(30,136,229,0.55)"; // かなり薄い青
-
-  drawDashedCircleLogical(center, radius, color);
-  return;
-}
-  
   if (preset.shape === "sector") {
     drawSectorRaw({
       cx,
@@ -1478,6 +1396,52 @@ if (preset.shape === "combo") {
       color: getLightColorByBase()
     });
   }
+}  
+  
+function drawRangeAttack() {
+  if (!basePoint) return;
+
+  const self = getBaseSelf();
+  if (!self) return;
+
+  const key = shortcutSelect.value;
+  const preset = rangePresets[key];
+  const scale = 129 / 350;
+
+  // 手動
+  if (key === "manual") {
+    const direction = getSectorDirection(self, self.color);
+    const { cx, cy } = logicalToCanvas(self.x, self.y);
+    drawSectorRaw({
+      cx, cy,
+      radius: Number(radiusSlider.value) * scale,
+      angleDeg: Number(angleInput.value),
+      directionRad: direction,
+      color: getLightColorByBase()
+    });
+    return;
+  }
+
+  // 特殊スキル
+  if (specialHandlers[key]) {
+    specialHandlers[key](self, scale, preset);
+    return;
+  }
+
+  // rect
+  if (preset.shape === "rect") {
+    handleRectPreset(self, scale, preset, key);
+    return;
+  }
+
+  // combo
+  if (preset.shape === "combo") {
+    handleComboPreset(self, scale, preset);
+    return;
+  }
+
+  // 通常（sector / ringSector）
+  handleNormalPreset(self, scale, preset);
 }
 
 function drawComboRect(keys, self, scale) {
