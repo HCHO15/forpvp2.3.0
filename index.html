@@ -1707,21 +1707,6 @@ modeSelect.addEventListener("change", () => {
   redraw();
 });
 
-radiusSlider.addEventListener("input", e => updateRadius(e.target.value));
-
-radiusSlider.addEventListener("wheel", e => {
-  e.preventDefault();
-  updateRadius(Number(radiusSlider.value) + (e.deltaY < 0 ? 10 : -10));
-});
-
-document.getElementById("radiusPlus").addEventListener("click", () =>
-  updateRadius(Number(radiusSlider.value) + 10)
-);
-
-document.getElementById("radiusMinus").addEventListener("click", () =>
-  updateRadius(Number(radiusSlider.value) - 10)
-);
-
 angleInput.addEventListener("input", () => {
   shortcutSelect.value = "manual";
   redraw();
