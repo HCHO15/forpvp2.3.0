@@ -1539,6 +1539,11 @@ function applySubFunction() {
   if (modeIndex === 4) drawRangeAttack();
 }
 
+function updateCounts() {
+  countsDisplay.textContent =
+    `赤点：${redPoints.length}/${MAX_POINTS}　青点：${bluePoints.length}/${MAX_POINTS}`;
+}
+  
 function redraw() {
   clearCanvas();
   [...redPoints, ...bluePoints].forEach(drawPoint);
@@ -1806,6 +1811,75 @@ document.querySelectorAll("input[name='obstacle']").forEach(r => {
 });
 
 initTables();
+/* ▼ 範囲プリセット一覧の生成 */
+const presetFilterList = document.getElementById("presetFilterList");
+const savedPresetEnabled = JSON.parse(localStorage.getItem("presetEnabled") || "{}");
+
+Array.from(shortcutSelect.options).forEach(opt => {
+  if (opt.value === "manual") return;
+
+  const key = opt.value;
+  const enabled = (key in savedPresetEnabled)
+    ? savedPresetEnabled[key]
+    : presetDefaultEnabled[key];
+
+  const label = document.createElement("label");
+  label.style.display = "block";
+  label.style.marginBottom = "4px";
+
+  label.innerHTML = `
+    <input type="checkbox" class="preset-filter" data-value="${key}" ${enabled ? "checked" : ""}>
+    ${opt.textContent}
+  `;
+
+  presetFilterList.appendChild(label);
+});
+
+function updateShortcutSelect() {
+  const filters = document.querySelectorAll(".preset-filter");
+  const allowed = ["manual"];
+
+  filters.forEach(f => {
+    if (f.checked) allowed.push(f.dataset.value);
+  });
+
+  const current = shortcutSelect.value;
+  shortcutSelect.innerHTML = "";
+
+  // manual
+  const optManual = document.createElement("option");
+  optManual.value = "manual";
+  optManual.textContent = "手動";
+  shortcutSelect.appendChild(optManual);
+
+  // 元の順番で追加
+  Array.from(presetFilterList.querySelectorAll("label")).forEach(label => {
+    const value = label.querySelector("input").dataset.value;
+    const jp = label.textContent.trim();
+
+    if (allowed.includes(value)) {
+      const opt = document.createElement("option");
+      opt.value = value;
+      opt.textContent = jp;
+      shortcutSelect.appendChild(opt);
+    }
+  });
+
+  shortcutSelect.value = allowed.includes(current) ? current : "manual";
+}  
+
+  /* ▼ チェック変更時に保存 */
+document.querySelectorAll(".preset-filter").forEach(cb =>
+  cb.addEventListener("change", () => {
+    const data = {};
+    document.querySelectorAll(".preset-filter").forEach(f => {
+      data[f.dataset.value] = f.checked;
+    });
+    localStorage.setItem("presetEnabled", JSON.stringify(data));
+    updateShortcutSelect();
+  })
+);  
+updateTablesFromPoints();  
 updateCounts?.();  // updateCounts が定義済みなら呼ぶ
 redraw();
 </script>
