@@ -491,6 +491,13 @@ body.dark-mode #settingsPanel input[type="radio"] {
     </div>
 
     <div style="margin-bottom:12px;">
+　　  <div><strong>背景マップ</strong></div>
+　　  <label><input type="radio" name="bgMap" value="S10" checked> S10</label><br>
+　　  <label><input type="radio" name="bgMap" value="S11"> S11</label>
+　　</div>
+
+
+    <div style="margin-bottom:12px;">
   <div><strong>範囲確認プリセットの表示</strong></div>
 
   <div id="presetFilterList" style="
@@ -615,8 +622,15 @@ function getLightColorByColor(color) {
 
 const bgImage = new Image();
 bgImage.src = "S10 map.png";
+const bgImageS11 = new Image();
+bgImageS11.src = "S11 map.png";
+let bgS11Loaded = false;
+bgImageS11.onload = () => { bgS11Loaded = true; redraw(); };
+
 let bgLoaded = false;
 bgImage.onload = () => { bgLoaded = true; redraw(); };
+
+let currentBg = localStorage.getItem("bgMap") || "S10";  
 
 const bgImage2 = new Image();
 bgImage2.src = "S10 map 遮蔽.png";
@@ -809,9 +823,13 @@ function clearCanvas() {
   ctx.fillRect(0, 0, width, height);
 
   // 通常マップ
-  if (bgLoaded) {
-    drawBackgroundImage(bgImage, 1.0);
-  }
+if (currentBg === "S10" && bgLoaded) {
+  drawBackgroundImage(bgImage, 1.0);
+}
+if (currentBg === "S11" && bgS11Loaded) {
+  drawBackgroundImage(bgImageS11, 1.0);
+}
+
 
   // 遮蔽物
   if (isObstacleVisible && bg2Loaded) {
@@ -2063,7 +2081,20 @@ document.querySelectorAll("input[name='obstacle']").forEach(r => {
   });
 });
 
+document.querySelectorAll("input[name='bgMap']").forEach(r => {
+  r.addEventListener("change", e => {
+    currentBg = e.target.value;
+    localStorage.setItem("bgMap", currentBg);
+    redraw();
+  });
+});
+  
 initTables();
+
+ // 背景マップの初期反映
+document.querySelector(`input[name='bgMap'][value='${currentBg}']`).checked = true;
+ 
+  
 /* ▼ 範囲プリセット一覧の生成 */
 const presetFilterList = document.getElementById("presetFilterList");
 const savedPresetEnabled = JSON.parse(localStorage.getItem("presetEnabled") || "{}");
