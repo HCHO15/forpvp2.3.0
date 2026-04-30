@@ -277,21 +277,21 @@ body.dark-mode #settingsPanel input[type="radio"] {
       <option value="atsukoNS">アツコNS</option>
       <option value="aliceEX">アリスEX</option>
       <option value="aliceRinsenEX">アリス（臨戦）EX</option>
-      <option value="aruNewyearEX">アル（正月）EX※跳弾攻撃</option>
+      <option value="aruNewyearEX">アル（正月）EX</option>
       <option value="ioriEX">イオリEX</option>
-      <option value="irihaEXNS">イロハEXNS※跳弾攻撃</option>
+      <option value="irihaEXNS">イロハEXNS</option>
       <option value="kanoeNS">カノエNS</option>
       <option value="kirinoNS">キリノNS※単体攻撃</option>
-      <option value="koharuMizugiEX">コハル（水着）EX</option>
+      <option value="kotoriCheerEX">コトリ（応援団）EX</option>
       <option value="konokaEX">コノカEX</option>
-      <option value="koyukiNS">コユキNS※跳弾攻撃</option>
+      <option value="koharuMizugiEX">コハル（水着）EX</option>
+      <option value="koyukiNS">コユキNS</option>
       <option value="sakiEX">サキEX</option>
       <option value="sayaCasualEX">サヤ（私服）EX</option>
       <option value="shirokoRidingNS">シロコ（ライディング）NS</option>
       <option value="shunEXAA">シュンEXAA</option>
       <option value="junkoEX">ジュンコEX</option>
       <option value="sumireEX">スミレEX</option>
-      <option value="kotoriCheerEX">コトリ（応援団）EX</option>
       <option value="tsubakiEX">ツバキEX</option>
       <option value="tsurugiEXAA">ツルギEXAA</option>
       <option value="tokiEX">トキEX</option>
@@ -302,9 +302,9 @@ body.dark-mode #settingsPanel input[type="radio"] {
       <option value="harunaNewyearEX">ハルナ（正月）EX</option>
       <option value="hinaDressEX">ヒナ（ドレス）EX</option>
       <option value="hinaMizugiEX">ヒナ（水着）EX</option>
-      <option value="hinataMizugiNS">ヒナタ（水着）NS※跳弾攻撃</option>
+      <option value="hinataMizugiNS">ヒナタ（水着）NS</option>
       <option value="hibikiEX">ヒビキEX</option>
-      <option value="hibikiNS">ヒビキNS※対象を選択</option>
+      <option value="hibikiNS">ヒビキNS</option>
       <option value="hihumiEX">ヒフミEX</option>
       <option value="hiyoriMizugiEX">ヒヨリ（水着）EX</option>
       <option value="hoshinoRinsenEX">ホシノ（臨戦）EX</option>
@@ -491,13 +491,6 @@ body.dark-mode #settingsPanel input[type="radio"] {
     </div>
 
     <div style="margin-bottom:12px;">
-　　  <div><strong>背景マップ</strong></div>
-　　  <label><input type="radio" name="bgMap" value="S10" checked> S10</label><br>
-　　  <label><input type="radio" name="bgMap" value="S11"> S11</label>
-　　</div>
-
-
-    <div style="margin-bottom:12px;">
   <div><strong>範囲確認プリセットの表示</strong></div>
 
   <div id="presetFilterList" style="
@@ -622,15 +615,8 @@ function getLightColorByColor(color) {
 
 const bgImage = new Image();
 bgImage.src = "S10 map.png";
-const bgImageS11 = new Image();
-bgImageS11.src = "S11 map.png";
-let bgS11Loaded = false;
-bgImageS11.onload = () => { bgS11Loaded = true; redraw(); };
-
 let bgLoaded = false;
 bgImage.onload = () => { bgLoaded = true; redraw(); };
-
-let currentBg = localStorage.getItem("bgMap") || "S10";  
 
 const bgImage2 = new Image();
 bgImage2.src = "S10 map 遮蔽.png";
@@ -823,13 +809,9 @@ function clearCanvas() {
   ctx.fillRect(0, 0, width, height);
 
   // 通常マップ
-if (currentBg === "S10" && bgLoaded) {
-  drawBackgroundImage(bgImage, 1.0);
-}
-if (currentBg === "S11" && bgS11Loaded) {
-  drawBackgroundImage(bgImageS11, 1.0);
-}
-
+  if (bgLoaded) {
+    drawBackgroundImage(bgImage, 1.0);
+  }
 
   // 遮蔽物
   if (isObstacleVisible && bg2Loaded) {
@@ -1935,6 +1917,42 @@ btnReset.addEventListener("click", () => {
 /* =========================
    ③ 保存・読み込み系
    ========================= */
+function getCurrentCoordinates() {
+  const redArr = [1,2,3,4].map(id => {
+    const p = redPoints.find(pt => pt.id === id);
+    return p ? { x: Math.round(p.x), y: Math.round(p.y) } : { x: 0, y: 0 };
+  });
+
+  const blueArr = [1,2,3,4].map(id => {
+    const p = bluePoints.find(pt => pt.id === id);
+    return p ? { x: Math.round(p.x), y: Math.round(p.y) } : { x: 0, y: 0 };
+  });
+
+  return { red: redArr, blue: blueArr };
+}
+
+function applyPresetData(data) {
+  redPoints = [];
+  bluePoints = [];
+
+  data.red.forEach((p, i) => {
+    if (p.x !== 0 || p.y !== 0) {
+      redPoints.push({ id: i + 1, color: "red", x: p.x, y: p.y });
+    }
+  });
+
+  data.blue.forEach((p, i) => {
+    if (p.x !== 0 || p.y !== 0) {
+      bluePoints.push({ id: i + 1, color: "blue", x: p.x, y: p.y });
+    }
+  });
+
+  basePoint = null;
+  updateTablesFromPoints();
+  updateCounts();
+  redraw();
+}
+  
 btnSave.addEventListener("click", () => {
   const redArr = [1,2,3,4].flatMap(id => {
     const p = redPoints.find(pt => pt.id === id);
@@ -2081,20 +2099,7 @@ document.querySelectorAll("input[name='obstacle']").forEach(r => {
   });
 });
 
-document.querySelectorAll("input[name='bgMap']").forEach(r => {
-  r.addEventListener("change", e => {
-    currentBg = e.target.value;
-    localStorage.setItem("bgMap", currentBg);
-    redraw();
-  });
-});
-  
 initTables();
-
- // 背景マップの初期反映
-document.querySelector(`input[name='bgMap'][value='${currentBg}']`).checked = true;
- 
-  
 /* ▼ 範囲プリセット一覧の生成 */
 const presetFilterList = document.getElementById("presetFilterList");
 const savedPresetEnabled = JSON.parse(localStorage.getItem("presetEnabled") || "{}");
