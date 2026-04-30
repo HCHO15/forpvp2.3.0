@@ -1917,6 +1917,11 @@ btnReset.addEventListener("click", () => {
 /* =========================
    ③ 保存・読み込み系
    ========================= */
+function savePreset(id, name, data) {
+  const obj = { name, data };
+  localStorage.setItem("preset_" + id, JSON.stringify(obj));
+}
+
 function getCurrentCoordinates() {
   const redArr = [1,2,3,4].map(id => {
     const p = redPoints.find(pt => pt.id === id);
@@ -2194,3 +2199,4 @@ resizeCanvasForMobile();
   
 </body>
 </html>
+
