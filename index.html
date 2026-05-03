@@ -1322,21 +1322,18 @@ function drawRingSectorRaw({ cx, cy, inner, outer, angleDeg, directionRad, color
   ctx.restore();
 }
 
-function drawHinataEX(basePoint, nearestOppositePoint, scale) {
-  const ctx = canvas.getContext("2d");
+function drawHinataEX(ctx, basePoint, nearestOppositePoint, scale) {
   const r = 150 * scale;
 
   const base = { x: basePoint.x, y: basePoint.y };
   const P = { x: nearestOppositePoint.x, y: nearestOppositePoint.y };
 
-  // 基準点 → 異色点 の向きベクトル
   const vx = P.x - base.x;
   const vy = P.y - base.y;
   const len = Math.hypot(vx, vy) || 1;
   const nx = vx / len;
   const ny = vy / len;
 
-  // ローカル正方向 (0,1) → 実際の正方向 (nx, ny)
   const angle = Math.atan2(ny, nx) - Math.atan2(1, 0);
   const cosA = Math.cos(angle);
   const sinA = Math.sin(angle);
@@ -1348,7 +1345,6 @@ function drawHinataEX(basePoint, nearestOppositePoint, scale) {
     };
   }
 
-  // ローカル中心座標（A を原点）
   const A = { x: 0,    y: 0    };
   const B = { x: -2*r, y: 0    };
   const C = { x:  2*r, y: 0    };
@@ -1503,11 +1499,11 @@ function handleKirinoNS(self, scale) {
   drawHighlightCircle(farthest.p, getLightColorByBase());
 }
 
-function handleHinataEX(self, scale, preset) {
+function handleHinataEX(self, scale, preset, ctx) {
   const nearest = findNearestOppositePoint(self);
   if (!nearest) return;
 
-  drawHinataEX(self, nearest, scale);
+  drawHinataEX(ctx, self, nearest, scale);
 }
   
 function handleHibikiEXWrapper(self, scale) {
@@ -1802,7 +1798,7 @@ function drawRangeAttack() {
 
   // 特殊スキル
   if (specialHandlers[key]) {
-    specialHandlers[key](self, scale, preset);
+    specialHandlers[key](self, scale, preset, ctx);
     return;
   }
 
