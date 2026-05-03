@@ -316,6 +316,7 @@ body.dark-mode #settingsPanel input[type="radio"] {
       <option value="harunaNewyearEX">ハルナ（正月）EX</option>
       <option value="hinaDressEX">ヒナ（ドレス）EX</option>
       <option value="hinaMizugiEX">ヒナ（水着）EX</option>
+      <option value="hinataMizugiNS">ヒナタEX</option>
       <option value="hinataMizugiNS">ヒナタ（水着）NS</option>
       <option value="hibikiEX">ヒビキEX</option>
       <option value="hibikiNS">ヒビキNS</option>
@@ -1179,6 +1180,8 @@ const rangePresets = {
   
   mutsukiNewyearEX: { shape: "ringSector", center: "self", params: { inner: 550, outer: 1100, angleDeg: 90  } },
 
+  hinataEX:      { shape: "hinataEX", center: "nearestOpp", params: {} },
+
   hibikiEX:      { shape: "hibiki", center: "nearestOpp", params: {} },
 
   hibikiNS: { shape: "hibiki", center: "self", params: {} },
@@ -1319,6 +1322,58 @@ function drawRingSectorRaw({ cx, cy, inner, outer, angleDeg, directionRad, color
   ctx.restore();
 }
 
+function drawHinataEX(basePoint, nearestOppositePoint, scale) {
+  const ctx = canvas.getContext("2d");
+  const r = 150 * scale;
+
+  const base = { x: basePoint.x, y: basePoint.y };
+  const P = { x: nearestOppositePoint.x, y: nearestOppositePoint.y };
+
+  // 基準点 → 異色点 の向きベクトル
+  const vx = P.x - base.x;
+  const vy = P.y - base.y;
+  const len = Math.hypot(vx, vy) || 1;
+  const nx = vx / len;
+  const ny = vy / len;
+
+  // ローカル正方向 (0,1) → 実際の正方向 (nx, ny)
+  const angle = Math.atan2(ny, nx) - Math.atan2(1, 0);
+  const cosA = Math.cos(angle);
+  const sinA = Math.sin(angle);
+
+  function rot(x, y) {
+    return {
+      x: P.x + x * cosA - y * sinA,
+      y: P.y + x * sinA + y * cosA
+    };
+  }
+
+  // ローカル中心座標（A を原点）
+  const A = { x: 0,    y: 0    };
+  const B = { x: -2*r, y: 0    };
+  const C = { x:  2*r, y: 0    };
+  const D = { x: -r,   y:  r   };
+  const E = { x:  r,   y:  r   };
+
+  const centers = [A, B, C, D, E];
+
+  ctx.save();
+  ctx.fillStyle = basePoint.color === "red"
+    ? "rgba(255,0,0,0.25)"
+    : "rgba(0,0,255,0.25)";
+
+  ctx.beginPath();
+
+  centers.forEach(c => {
+    const p = rot(c.x, c.y);
+    ctx.moveTo(p.x + r, p.y);
+    ctx.arc(p.x, p.y, r, 0, Math.PI * 2);
+  });
+
+  ctx.fill();
+  ctx.restore();
+}
+  
 function drawHibikiEX(centerB, angleDeg, color) {
   const scale = 129 / 350;
   const R = 150 * scale;
@@ -1400,6 +1455,7 @@ function handleHibikiNS(self, scale) {
 const specialHandlers = {
   reisaMagicEX: handleReisaMagicEX,
   kirinoNS: handleKirinoNS,
+  hinataEX: handleHinataEX,
   hibikiEX: handleHibikiEXWrapper,
   marinaEX: handleMarinaEX,
   harunaNewyearEX: handleHarunaNewyearEX,
@@ -1447,6 +1503,13 @@ function handleKirinoNS(self, scale) {
   drawHighlightCircle(farthest.p, getLightColorByBase());
 }
 
+function handleHinataEX(self, scale, preset) {
+  const nearest = findNearestOppositePoint(self);
+  if (!nearest) return;
+
+  drawHinataEX(self, nearest, scale);
+}
+  
 function handleHibikiEXWrapper(self, scale) {
   const same = getPointsByColor(basePoint.color);
   const others = getOppositePointsByColor(basePoint.color);
