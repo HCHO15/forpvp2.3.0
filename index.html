@@ -253,6 +253,7 @@ body.dark-mode #settingsPanel input[type="radio"] {
         <button id="btnColor">現在：赤 → 青に切り替え</button>
         <button id="btnReset">リセット</button>
         <button id="btnSave">画像保存</button>
+        <button id="btnCopyUrl">🔗 URLをコピー</button>
 
         <select id="modeSelect">
           <option value="0">攻撃SP</option>
@@ -2193,6 +2194,143 @@ btnSave.addEventListener("click", () => {
   link.click();
 });
 
+/* =========================
+   ⑧ URL共有機能
+   ========================= */
+
+/**
+ * 現在の配置をURLハッシュにエンコードしてコピーする。
+ * フォーマット: #v1,R,x1,y1,x2,y2,x3,y3,x4,y4,B,x1,y1,x2,y2,x3,y3,x4,y4
+ * 未配置の点は座標 0,0 で記録する。
+ */
+function generateShareUrl() {
+  const coords = getCurrentCoordinates();
+
+  const rPart = coords.red.map(p => `${p.x},${p.y}`).join(",");
+  const bPart = coords.blue.map(p => `${p.x},${p.y}`).join(",");
+  const hash = `#v1,R,${rPart},B,${bPart}`;
+
+  const url = location.href.split("#")[0] + hash;
+  return url;
+}
+
+/**
+ * URLハッシュから配置データをパースして適用する。
+ * ハッシュが存在しない、またはフォーマットが不正な場合は何もしない。
+ */
+function loadFromUrlHash() {
+  const hash = location.hash;
+  if (!hash || !hash.startsWith("#v1,")) return;
+
+  try {
+    // "#v1,R,x1,y1,...,B,x1,y1,..." をパース
+    const inner = hash.slice(1); // "#" を除く
+    const rMatch = inner.match(/R,([-\d,]+),B/);
+    const bMatch = inner.match(/B,([-\d,]+)$/);
+
+    if (!rMatch || !bMatch) return;
+
+    const rNums = rMatch[1].split(",").map(Number);
+    const bNums = bMatch[1].split(",").map(Number);
+
+    if (rNums.length !== 8 || bNums.length !== 8) return;
+
+    const toPoints = (nums, color) => {
+      const result = [];
+      for (let i = 0; i < 4; i++) {
+        const x = nums[i * 2];
+        const y = nums[i * 2 + 1];
+        if (x !== 0 || y !== 0) {
+          result.push({ id: i + 1, color, x, y });
+        }
+      }
+      return result;
+    };
+
+    redPoints = toPoints(rNums, "red");
+    bluePoints = toPoints(bNums, "blue");
+    basePoint = null;
+
+    updateTablesFromPoints();
+    updateCounts();
+    redraw();
+
+    // ハッシュで読み込んだことをユーザーに通知
+    setTimeout(() => {
+      showUrlToast("📍 URLから配置を復元しました");
+    }, 500);
+
+  } catch (e) {
+    console.warn("URLハッシュのパースに失敗しました:", e);
+  }
+}
+
+/** コピー完了などの一時メッセージを表示するトースト */
+function showUrlToast(message) {
+  let toast = document.getElementById("urlToast");
+  if (!toast) {
+    toast = document.createElement("div");
+    toast.id = "urlToast";
+    toast.style.cssText = `
+      position: fixed;
+      bottom: 24px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: #333;
+      color: #fff;
+      padding: 10px 20px;
+      border-radius: 6px;
+      font-size: 14px;
+      z-index: 99999;
+      opacity: 0;
+      transition: opacity 0.3s;
+      pointer-events: none;
+      white-space: nowrap;
+    `;
+    document.body.appendChild(toast);
+  }
+  toast.textContent = message;
+  toast.style.opacity = "1";
+  clearTimeout(toast._timer);
+  toast._timer = setTimeout(() => {
+    toast.style.opacity = "0";
+  }, 2500);
+}
+
+document.getElementById("btnCopyUrl").addEventListener("click", () => {
+  const url = generateShareUrl();
+
+  // クリップボードにコピー
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(url).then(() => {
+      showUrlToast("✅ URLをクリップボードにコピーしました");
+    }).catch(() => {
+      // フォールバック
+      fallbackCopyUrl(url);
+    });
+  } else {
+    fallbackCopyUrl(url);
+  }
+});
+
+function fallbackCopyUrl(url) {
+  const ta = document.createElement("textarea");
+  ta.value = url;
+  ta.style.cssText = "position:fixed;top:-9999px;left:-9999px;";
+  document.body.appendChild(ta);
+  ta.select();
+  try {
+    document.execCommand("copy");
+    showUrlToast("✅ URLをクリップボードにコピーしました");
+  } catch {
+    showUrlToast("⚠️ コピーに失敗しました。手動でURLをコピーしてください");
+  }
+  document.body.removeChild(ta);
+}
+
+// ページロード時にハッシュがあれば配置を復元
+window.addEventListener("load", loadFromUrlHash);
+
 document.querySelectorAll(".preset-save").forEach(btn => {
   btn.addEventListener("click", e => {
     const block = e.target.closest(".preset-block");
@@ -2445,4 +2583,3 @@ resizeCanvasForMobile();
   
 </body>
 </html>
-
