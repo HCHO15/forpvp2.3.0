@@ -378,7 +378,7 @@ body.dark-mode #iconModalTitle {
 </head>
 
 <body>
-  <h1>ホル式戦術対抗戦マップ　-シッテムの箱- 1458</h1>
+  <h1>ホル式戦術対抗戦マップ　-シッテムの箱- 2054</h1>
   
   <div class="container">
     <div class="left-panel">
@@ -2128,9 +2128,9 @@ let isIconModeOn = false;
 // ロード済み画像キャッシュ
 const iconImageCache = {};
 
-// GitHubリポジトリ情報（st/フォルダのファイル一覧をAPIで取得）
-const GITHUB_API_URL = "https://api.github.com/repos/HCHO15/forpvp2.3.0/contents/st";
-const ICON_BASE_URL   = "st/";
+// GitHubリポジトリ情報（students/フォルダのファイル一覧をAPIで取得）
+const GITHUB_API_URL = "https://api.github.com/repos/HCHO15/forpvp2.3.0/contents/students";
+const ICON_BASE_URL   = "students/";
 
 let allIconFiles = []; // ["tsubaki.png", "hibiki.png", ...]
 
@@ -2154,7 +2154,7 @@ async function fetchIconFileList() {
 function loadIconImage(filename) {
   if (iconImageCache[filename]) return iconImageCache[filename];
   const img = new Image();
-  img.src = ICON_BASE_URL + filename;
+  img.src = ICON_BASE_URL + encodeURIComponent(filename);
   img.onload  = () => redraw();
   img.onerror = () => {};
   iconImageCache[filename] = img;
@@ -2401,7 +2401,7 @@ function renderIconGrid(filter) {
     cell.className = "icon-cell";
 
     const img = document.createElement("img");
-    img.src = ICON_BASE_URL + filename;
+    img.src = ICON_BASE_URL + encodeURIComponent(filename);
     img.alt = filename;
     img.loading = "lazy";
 
@@ -2796,9 +2796,10 @@ function generateShareUrl() {
 
   // アイコン割り当てをコンパクトにシリアライズ
   // 形式: I,red_1:tsubaki.png|blue_2:hibiki.png
+  // ファイル名はURIエンコードしてカタカナ等の非ASCII文字に対応
   const iconEntries = Object.entries(iconAssignments)
     .filter(([, v]) => v)
-    .map(([k, v]) => `${k}:${v}`)
+    .map(([k, v]) => `${k}:${encodeURIComponent(v)}`)
     .join("|");
   const iPart = iconEntries ? `,I,${iconEntries}` : "";
 
@@ -2852,7 +2853,7 @@ function loadFromUrlHash() {
           const colonIdx = entry.indexOf(":");
           if (colonIdx > 0) {
             const key = entry.slice(0, colonIdx);
-            const val = entry.slice(colonIdx + 1);
+            const val = decodeURIComponent(entry.slice(colonIdx + 1));
             if (key && val) iconAssignments[key] = val;
           }
         });
