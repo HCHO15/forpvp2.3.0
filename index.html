@@ -378,7 +378,7 @@ body.dark-mode #iconModalTitle {
 </head>
 
 <body>
-  <h1>ホル式戦術対抗戦マップ　-シッテムの箱- 1314</h1>
+  <h1>ホル式戦術対抗戦マップ　-シッテムの箱- 1335</h1>
   
   <div class="container">
     <div class="left-panel">
@@ -2168,9 +2168,9 @@ function getIconDirection(point, allPoints) {
 function drawIconArrows() {
   if (!isIconModeOn) return;
 
-  const ARROW_LEN   = 60;   // 点からアイコン中心までの距離
-  const ICON_SIZE   = 40;   // アイコン描画サイズ（36→40、約+10%）
-  const ICON_RADIUS = 20;   // アイコン角丸クリップ用
+  const ARROW_LEN   = 70;   // 点からアイコン中心までの距離
+  const ICON_SIZE   = 48;   // アイコン描画サイズ（40→48、約+20%）
+  const ICON_RADIUS = 24;   // アイコン角丸クリップ用
 
   const allPoints = [...redPoints, ...bluePoints];
 
@@ -2354,9 +2354,9 @@ document.querySelectorAll("input[name='iconMode']").forEach(r =>
 
 function redraw() {
   clearCanvas();
+  drawIconArrows();
   [...redPoints, ...bluePoints].forEach(drawPoint);
   applySubFunction();
-  drawIconArrows();
 }
 
 /* =========================
