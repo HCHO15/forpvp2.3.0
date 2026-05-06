@@ -378,7 +378,7 @@ body.dark-mode #iconModalTitle {
 </head>
 
 <body>
-  <h1>ホル式戦術対抗戦マップ　-シッテムの箱- 1425</h1>
+  <h1>ホル式戦術対抗戦マップ　-シッテムの箱- 1435</h1>
   
   <div class="container">
     <div class="left-panel">
@@ -703,46 +703,68 @@ body.dark-mode #iconModalTitle {
             このツールの使い方（クリックで開く）
           </summary>
           <div style="padding: 8px 12px; background: #fafafa; border: 1px solid #ddd; border-radius: 4px; margin-top: 6px; font-size: 14px; line-height: 1.6;">
-            <p><strong>ホル式戦術対抗戦マップ　-シッテムの箱-</strong>は、マップ上に生徒を表す赤点・青点を配置し、位置関係・部隊重心・最短距離・範囲攻撃などを視覚的に確認できる戦術対抗戦支援ツールです</p>
+            <p><strong>ホル式戦術対抗戦マップ　-シッテムの箱-</strong>は、マップ上に生徒を表す赤点・青点を配置し、位置関係・部隊重心・最短距離・スキル範囲などを視覚的に確認できる戦術対抗戦支援ツールです。</p>
 
             <h4>■ 基本操作</h4>
             <ul>
-              <li><strong>左クリック：</strong> 点を追加します</li>
-              <li><strong>ドラッグ：</strong> 点を移動します</li>
-              <li><strong>右クリック：</strong> 点を削除します</li>
-              <li><strong>色切り替え：</strong> 赤 ↔ 青 を変更します</li>
+              <li><strong>左クリック：</strong>点を追加します（赤/青は「色切り替え」ボタンで変更）</li>
+              <li><strong>ドラッグ：</strong>点を移動します</li>
+              <li><strong>右クリック：</strong>点を削除します</li>
+              <li><strong>ダブルクリック：</strong>点を基準点に設定します（座標表のラジオボタンでも可）</li>
+              <li><strong>召喚物を考慮：</strong>チェックを入れると各チーム最大5点まで配置できます（5点目は☆表示）</li>
             </ul>
 
-            <h4>■ 基準点の選択</h4>
+            <h4>■ モード（表示切り替え）</h4>
             <ul>
-              <li>座標表の <strong>ラジオボタン</strong> をクリックしてください</li>
-              <li>または、キャンバス上の点を <strong>ダブルクリック</strong>してください</li>
+              <li><strong>攻撃SP：</strong>SPアタッカーの攻撃ターゲットを強調します</li>
+              <li><strong>バフSP：</strong>SPバッファーのバフターゲットを強調します</li>
+              <li><strong>攻撃ST：</strong>基準点に選んだSTの攻撃ターゲットを強調します</li>
+              <li><strong>バフST：</strong>基準点に選んだSTのバフターゲットを強調します</li>
+              <li><strong>範囲確認：</strong>基準点を中心にスキル範囲を描画します。半径・角度を手動調整するか、キャラクターのショートカットプリセットから選択できます</li>
             </ul>
 
-            <h4>■ サブ機能（モード）</h4>
+            <h4>■ 配置プリセット</h4>
             <ul>
-              <li><strong>攻撃SP：</strong> SPアタッカーのターゲット を強調します</li>
-              <li><strong>バフSP：</strong> SPバッファーのターゲット を強調します</li>
-              <li><strong>攻撃ST：</strong> 基準点に選択したSTの攻撃ターゲット を強調します</li>
-              <li><strong>バフST：</strong> 基準点に選択したSTのバフターゲット を強調します</li>
-              <li><strong>範囲確認：</strong> 基準点に選択したSTまたは同部隊SPのスキル範囲を描画します（半径・角度調整可）</li>
+              <li>右パネルの「現在の配置を保存」で現在の赤青両チームの配置をプリセットとして保存します</li>
+              <li>「適用」で保存した配置を呼び出し、「削除」で削除します</li>
+              <li>プリセットは1〜12番まで、タブで3枠ずつ切り替えて管理できます</li>
+              <li>キャラアイコンの割り当て情報もプリセットに含まれます</li>
             </ul>
 
-            <h4>■ その他</h4>
+            <h4>■ URL共有</h4>
             <ul>
-              <li><strong>画像保存：</strong> 現在の配置をPNGで保存します</li>
-              <li><strong>ショートカット：</strong> ツバキなど主な範囲スキルのプリセットです</li>
+              <li>「🔗 URLをコピー」ボタンで現在の配置をURLとしてコピーします</li>
+              <li>そのURLを開くと配置が自動で復元されます</li>
+              <li>キャラアイコンの割り当て情報もURLに含まれます</li>
+              <li>スプレッドシートにURLを貼ることで配置データのデータベース運用が可能です</li>
             </ul>
 
-            <p>直感的に操作できるよう設計されています。ぜひ自由に触ってみてください。</p>
+            <h4>■ キャラアイコン表示</h4>
+            <ul>
+              <li>設定から「キャラアイコン表示」をONにすると使用できます</li>
+              <li><strong>Shift+点クリック：</strong>アイコン選択ウィンドウが開きます。キャラ名で絞り込み検索もできます</li>
+              <li>割り当てたアイコンは点から矢印が伸びた先に表示されます</li>
+              <li><strong>Shift+アイコンドラッグ：</strong>アイコンの表示位置を自由に移動できます</li>
+              <li>アイコンを持つ点をドラッグで移動すると、アイコン位置は自動配置に戻ります</li>
+              <li>ファイル名が <code>_a</code> で終わるアイコンには「攻」、<code>_d</code> で終わるアイコンには「防」のバッジが右下に表示されます</li>
+            </ul>
+
+            <h4>■ 設定</h4>
+            <ul>
+              <li><strong>ダークモード：</strong>ON/OFFを切り替えます</li>
+              <li><strong>遮蔽物表示：</strong>マップ上の遮蔽物レイヤーの表示/非表示を切り替えます</li>
+              <li><strong>範囲確認プリセットの表示：</strong>範囲確認モードのキャラクタープリセット一覧に表示するキャラを選択できます</li>
+              <li><strong>キャラアイコン表示：</strong>アイコン機能のON/OFFを切り替えます</li>
+            </ul>
+
             <p>不具合報告や新機能の実装希望はこちらまで↓</p>
-     　　　 <p>
-  <a href="https://docs.google.com/forms/d/e/1FAIpQLSfYnSxyBftTE8hRrijhFfLnJLUf-vUuWeSvyoZkx_JFScHDNg/viewform?usp=dialog"
-     target="_blank"
-     style="color:#1e88e5; text-decoration: underline;">
-    シッテムの箱フィードバック
-  </a>
-</p>
+            <p>
+              <a href="https://docs.google.com/forms/d/e/1FAIpQLSfYnSxyBftTE8hRrijhFfLnJLUf-vUuWeSvyoZkx_JFScHDNg/viewform?usp=dialog"
+                 target="_blank"
+                 style="color:#1e88e5; text-decoration: underline;">
+                シッテムの箱フィードバック
+              </a>
+            </p>
           </div>
         </details>
       </div>
