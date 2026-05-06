@@ -378,7 +378,7 @@ body.dark-mode #iconModalTitle {
 </head>
 
 <body>
-  <h1>ホル式戦術対抗戦マップ　-シッテムの箱- 1407</h1>
+  <h1>ホル式戦術対抗戦マップ　-シッテムの箱- 1425</h1>
   
   <div class="container">
     <div class="left-panel">
@@ -2261,6 +2261,27 @@ function drawIconArrows() {
       ctx.roundRect(ix - half, iy - half, ICON_SIZE, ICON_SIZE, ICON_RADIUS);
       ctx.stroke();
       ctx.restore();
+
+      // 攻/防バッジ（_a → 攻、_d → 防）
+      const badgeLabel = filename.match(/_a\.[^.]+$/i) ? "攻"
+                       : filename.match(/_d\.[^.]+$/i) ? "防"
+                       : null;
+      if (badgeLabel) {
+        const bw = 18, bh = 16, br = 4;
+        const bx = ix + half - bw + 4;   // アイコン右端より少しはみ出す
+        const by = iy + half - bh + 4;   // アイコン下端より少しはみ出す
+        ctx.save();
+        ctx.fillStyle = "#DA9F01";
+        ctx.beginPath();
+        ctx.roundRect(bx, by, bw, bh, br);
+        ctx.fill();
+        ctx.fillStyle = "#fff";
+        ctx.font = "bold 11px system-ui";
+        ctx.textAlign = "center";
+        ctx.textBaseline = "middle";
+        ctx.fillText(badgeLabel, bx + bw / 2, by + bh / 2);
+        ctx.restore();
+      }
     }
   });
 }
