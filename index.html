@@ -378,7 +378,7 @@ body.dark-mode #iconModalTitle {
 </head>
 
 <body>
-  <h1>ホル式戦術対抗戦マップ　-シッテムの箱- 1251</h1>
+  <h1>ホル式戦術対抗戦マップ　-シッテムの箱- 1314</h1>
   
   <div class="container">
     <div class="left-panel">
@@ -1070,6 +1070,9 @@ function removePoint(p) {
   if (basePoint && basePoint.color === p.color && basePoint.id === p.id) {
     basePoint = null;
   }
+
+  // アイコン割り当ても解除
+  delete iconAssignments[`${p.color}_${p.id}`];
 }
 
 function findPointAtCanvasPos(cx, cy) {
@@ -2165,9 +2168,9 @@ function getIconDirection(point, allPoints) {
 function drawIconArrows() {
   if (!isIconModeOn) return;
 
-  const ARROW_LEN   = 52;   // 点からアイコン中心までの距離
-  const ICON_SIZE   = 36;   // アイコン描画サイズ
-  const ICON_RADIUS = 18;   // アイコン角丸クリップ用
+  const ARROW_LEN   = 60;   // 点からアイコン中心までの距離
+  const ICON_SIZE   = 40;   // アイコン描画サイズ（36→40、約+10%）
+  const ICON_RADIUS = 20;   // アイコン角丸クリップ用
 
   const allPoints = [...redPoints, ...bluePoints];
 
