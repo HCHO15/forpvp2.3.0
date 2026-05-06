@@ -175,6 +175,140 @@ body.dark-mode #settingsPanel input[type="radio"] {
   border: 1px solid #555 !important;
 }
     
+/* ============================
+   アイコン選択モーダル
+   ============================ */
+#iconModal {
+  display: none;
+  position: fixed;
+  top: 0; left: 0;
+  width: 100%; height: 100%;
+  background: rgba(0,0,0,0.5);
+  justify-content: center;
+  align-items: center;
+  z-index: 10000;
+}
+
+#iconPanel {
+  background: #fff;
+  border-radius: 8px;
+  padding: 16px;
+  width: 480px;
+  max-width: 95vw;
+  max-height: 80vh;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  font-size: 14px;
+}
+
+#iconSearchInput {
+  width: 100%;
+  padding: 6px 8px;
+  font-size: 13px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  box-sizing: border-box;
+}
+
+#iconGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(60px, 1fr));
+  gap: 6px;
+  overflow-y: auto;
+  max-height: 55vh;
+  padding: 4px;
+}
+
+.icon-cell {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  cursor: pointer;
+  border: 2px solid transparent;
+  border-radius: 6px;
+  padding: 4px;
+  transition: border-color 0.15s, background 0.15s;
+}
+
+.icon-cell:hover {
+  border-color: #1e88e5;
+  background: #e3f2fd;
+}
+
+.icon-cell img {
+  width: 48px;
+  height: 48px;
+  object-fit: contain;
+  border-radius: 4px;
+}
+
+.icon-cell .icon-label {
+  font-size: 9px;
+  color: #555;
+  text-align: center;
+  word-break: break-all;
+  line-height: 1.2;
+  max-width: 60px;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.icon-cell.icon-none {
+  border: 2px dashed #aaa;
+  color: #888;
+  font-size: 11px;
+  justify-content: center;
+  min-height: 60px;
+}
+
+.icon-cell.icon-none:hover {
+  border-color: #e53935;
+  background: #ffebee;
+  color: #e53935;
+}
+
+#iconModalTitle {
+  font-weight: bold;
+  font-size: 14px;
+  color: #333;
+}
+
+#iconModalClose {
+  margin-left: auto;
+  background: none;
+  border: none;
+  font-size: 18px;
+  cursor: pointer;
+  color: #888;
+  padding: 0 4px;
+}
+
+body.dark-mode #iconPanel {
+  background: #222;
+  color: #eee;
+}
+
+body.dark-mode #iconSearchInput {
+  background: #333;
+  color: #fff;
+  border-color: #555;
+}
+
+body.dark-mode .icon-cell .icon-label {
+  color: #aaa;
+}
+
+body.dark-mode .icon-cell:hover {
+  background: #1a3a5c;
+}
+
+body.dark-mode #iconModalTitle {
+  color: #eee;
+}
+
 @media (max-width: 600px) {
 
   body {
@@ -662,13 +796,51 @@ body.dark-mode #settingsPanel input[type="radio"] {
   </div>
 </div>
     
+    <div style="margin-bottom:12px;">
+      <div><strong>キャラアイコン表示</strong></div>
+      <label><input type="radio" name="iconMode" value="off" checked> OFF</label><br>
+      <label><input type="radio" name="iconMode" value="on"> ON（Shift+クリックで割り当て）</label>
+    </div>
+
     <button id="btnSettingsClose">閉じる</button>
+  </div>
+</div>
+
+<!-- アイコン選択モーダル -->
+<div id="iconModal">
+  <div id="iconPanel">
+    <div style="display:flex; align-items:center; gap:8px;">
+      <span id="iconModalTitle">キャラを選択</span>
+      <button id="iconModalClose">✕</button>
+    </div>
+    <input type="text" id="iconSearchInput" placeholder="ファイル名で絞り込み…">
+    <div id="iconGrid">
+      <div style="color:#888; font-size:12px; padding:8px;">読み込み中…</div>
+    </div>
   </div>
 </div>
   
 <script>
 const canvas = document.getElementById("mainCanvas");
 const ctx = canvas.getContext("2d");
+
+// roundRect ポリフィル（Safari 15以前など古いブラウザ向け）
+if (!CanvasRenderingContext2D.prototype.roundRect) {
+  CanvasRenderingContext2D.prototype.roundRect = function(x, y, w, h, r) {
+    const radius = Math.min(r, w / 2, h / 2);
+    this.beginPath();
+    this.moveTo(x + radius, y);
+    this.lineTo(x + w - radius, y);
+    this.quadraticCurveTo(x + w, y, x + w, y + radius);
+    this.lineTo(x + w, y + h - radius);
+    this.quadraticCurveTo(x + w, y + h, x + w - radius, y + h);
+    this.lineTo(x + radius, y + h);
+    this.quadraticCurveTo(x, y + h, x, y + h - radius);
+    this.lineTo(x, y + radius);
+    this.quadraticCurveTo(x, y, x + radius, y);
+    this.closePath();
+  };
+}
 const width = canvas.width;
 const height = canvas.height;
 
@@ -1915,10 +2087,273 @@ function updateCounts() {
     `赤点：${redPoints.length}/${MAX_POINTS}　青点：${bluePoints.length}/${MAX_POINTS}`;
 }
   
+/* =========================
+   ⑨ キャラアイコン機能
+   ========================= */
+
+// 各点のアイコン割り当て: キー = "red_1" / "blue_3" など、値 = ファイル名("tsubaki.png")
+let iconAssignments = {};
+
+// アイコン表示ON/OFFフラグ
+let isIconModeOn = false;
+
+// ロード済み画像キャッシュ
+const iconImageCache = {};
+
+// GitHubリポジトリ情報（st/フォルダのファイル一覧をAPIで取得）
+const GITHUB_API_URL = "https://api.github.com/repos/HCHO15/forpvp2.3.0/contents/st";
+const ICON_BASE_URL   = "st/";
+
+let allIconFiles = []; // ["tsubaki.png", "hibiki.png", ...]
+
+/** GitHub API でアイコンファイル一覧を取得 */
+async function fetchIconFileList() {
+  try {
+    const res = await fetch(GITHUB_API_URL);
+    if (!res.ok) throw new Error("API error: " + res.status);
+    const json = await res.json();
+    allIconFiles = json
+      .filter(f => f.type === "file" && /\.(png|jpg|jpeg|webp|gif)$/i.test(f.name))
+      .map(f => f.name)
+      .sort();
+  } catch (e) {
+    console.warn("アイコン一覧の取得に失敗しました:", e);
+    allIconFiles = [];
+  }
+}
+
+/** 画像を非同期でプリロード（キャッシュ済みなら即返す）*/
+function loadIconImage(filename) {
+  if (iconImageCache[filename]) return iconImageCache[filename];
+  const img = new Image();
+  img.src = ICON_BASE_URL + filename;
+  img.onload  = () => redraw();
+  img.onerror = () => {};
+  iconImageCache[filename] = img;
+  return img;
+}
+
+/**
+ * 点の位置からアイコンを表示する方向ベクトルを決定する。
+ * キャンバスの9分割グリッドを使い、端寄りになるよう調整。
+ * 他の矢印との重なりを最小化するため、同じ陣営内で方向が被らないよう調整する。
+ */
+function getIconDirection(point, allPoints) {
+  const W = canvas.width;
+  const H = canvas.height;
+  const { cx, cy } = logicalToCanvas(point.x, point.y);
+
+  // キャンバスを3×3に分割してどのセルにいるか
+  const col = cx < W / 3 ? 0 : cx < (W * 2) / 3 ? 1 : 2;
+  const row = cy < H / 3 ? 0 : cy < (H * 2) / 3 ? 1 : 2;
+
+  // セルに応じた「端方向」への基本ベクトル
+  // 端セル→外向き、中央セル→右下
+  const colDir = col === 0 ? -1 : col === 2 ? 1 : 1;
+  const rowDir = row === 0 ? -1 : row === 2 ? 1 : 1;
+
+  // 中央セルの場合は点の絶対位置から押し出し方向を決める
+  const fx = col === 1 ? (cx > W / 2 ? 1 : -1) : colDir;
+  const fy = row === 1 ? (cy > H / 2 ? 1 : -1) : rowDir;
+
+  // 正規化
+  const len = Math.sqrt(fx * fx + fy * fy);
+  return { dx: fx / len, dy: fy / len };
+}
+
+/** アイコン矢印とアイコン画像をCanvasに描画 */
+function drawIconArrows() {
+  if (!isIconModeOn) return;
+
+  const ARROW_LEN   = 52;   // 点からアイコン中心までの距離
+  const ICON_SIZE   = 36;   // アイコン描画サイズ
+  const ICON_RADIUS = 18;   // アイコン角丸クリップ用
+
+  const allPoints = [...redPoints, ...bluePoints];
+
+  allPoints.forEach(p => {
+    const key = `${p.color}_${p.id}`;
+    const filename = iconAssignments[key];
+    if (!filename) return;
+
+    const { cx: px, cy: py } = logicalToCanvas(p.x, p.y);
+    const { dx, dy } = getIconDirection(p, allPoints);
+
+    // 矢印の終点（アイコン中心）
+    const ix = px + dx * ARROW_LEN;
+    const iy = py + dy * ARROW_LEN;
+
+    // 矢印の色（点の色系統で薄め）
+    const arrowColor = p.color === "red"
+      ? "rgba(229,57,53,0.45)"
+      : "rgba(30,136,229,0.45)";
+
+    // 矢印の線（点の端からアイコンの端まで）
+    const startX = px + dx * (POINT_RADIUS + 2);
+    const startY = py + dy * (POINT_RADIUS + 2);
+    const endX   = ix - dx * (ICON_SIZE / 2 + 2);
+    const endY   = iy - dy * (ICON_SIZE / 2 + 2);
+
+    ctx.save();
+    ctx.strokeStyle = arrowColor;
+    ctx.lineWidth   = 1.5;
+    ctx.setLineDash([3, 3]);
+    ctx.beginPath();
+    ctx.moveTo(startX, startY);
+    ctx.lineTo(endX, endY);
+    ctx.stroke();
+
+    // 矢印の先端（小さな三角）
+    const headLen  = 7;
+    const headAngle = Math.atan2(dy, dx);
+    ctx.setLineDash([]);
+    ctx.lineWidth = 1.5;
+    ctx.beginPath();
+    ctx.moveTo(endX, endY);
+    ctx.lineTo(
+      endX - headLen * Math.cos(headAngle - Math.PI / 7),
+      endY - headLen * Math.sin(headAngle - Math.PI / 7)
+    );
+    ctx.moveTo(endX, endY);
+    ctx.lineTo(
+      endX - headLen * Math.cos(headAngle + Math.PI / 7),
+      endY - headLen * Math.sin(headAngle + Math.PI / 7)
+    );
+    ctx.stroke();
+    ctx.restore();
+
+    // アイコン画像（角丸クリップ）
+    const img = loadIconImage(filename);
+    if (img.complete && img.naturalWidth > 0) {
+      ctx.save();
+      ctx.beginPath();
+      const half = ICON_SIZE / 2;
+      ctx.roundRect(ix - half, iy - half, ICON_SIZE, ICON_SIZE, ICON_RADIUS);
+      ctx.clip();
+      ctx.drawImage(img, ix - half, iy - half, ICON_SIZE, ICON_SIZE);
+      ctx.restore();
+
+      // アイコン枠（点の色系統）
+      ctx.save();
+      ctx.strokeStyle = p.color === "red" ? COLOR_RED : COLOR_BLUE;
+      ctx.lineWidth   = 2;
+      ctx.beginPath();
+      ctx.roundRect(ix - half, iy - half, ICON_SIZE, ICON_SIZE, ICON_RADIUS);
+      ctx.stroke();
+      ctx.restore();
+    }
+  });
+}
+
+/* --- アイコン選択モーダル制御 --- */
+
+let iconTargetPoint = null; // 選択中の点
+
+function openIconModal(point) {
+  iconTargetPoint = point;
+  const label = point.color === "red" ? "赤" : "青";
+  document.getElementById("iconModalTitle").textContent =
+    `キャラを選択（${label}${point.id}番）`;
+
+  document.getElementById("iconSearchInput").value = "";
+  renderIconGrid("");
+  document.getElementById("iconModal").style.display = "flex";
+}
+
+function closeIconModal() {
+  document.getElementById("iconModal").style.display = "none";
+  iconTargetPoint = null;
+}
+
+function renderIconGrid(filter) {
+  const grid = document.getElementById("iconGrid");
+  grid.innerHTML = "";
+
+  // 「割り当て解除」セル
+  const noneCell = document.createElement("div");
+  noneCell.className = "icon-cell icon-none";
+  noneCell.textContent = "なし";
+  noneCell.addEventListener("click", () => {
+    if (iconTargetPoint) {
+      delete iconAssignments[`${iconTargetPoint.color}_${iconTargetPoint.id}`];
+      redraw();
+    }
+    closeIconModal();
+  });
+  grid.appendChild(noneCell);
+
+  const filtered = filter
+    ? allIconFiles.filter(f => f.toLowerCase().includes(filter.toLowerCase()))
+    : allIconFiles;
+
+  if (filtered.length === 0) {
+    const msg = document.createElement("div");
+    msg.style.cssText = "color:#888; font-size:12px; padding:8px; grid-column:1/-1;";
+    msg.textContent = "該当なし";
+    grid.appendChild(msg);
+    return;
+  }
+
+  filtered.forEach(filename => {
+    const cell = document.createElement("div");
+    cell.className = "icon-cell";
+
+    const img = document.createElement("img");
+    img.src = ICON_BASE_URL + filename;
+    img.alt = filename;
+    img.loading = "lazy";
+
+    const label = document.createElement("div");
+    label.className = "icon-label";
+    label.textContent = filename.replace(/\.[^.]+$/, ""); // 拡張子を除いたキャラ名
+    label.title = filename;
+
+    cell.appendChild(img);
+    cell.appendChild(label);
+
+    cell.addEventListener("click", () => {
+      if (iconTargetPoint) {
+        iconAssignments[`${iconTargetPoint.color}_${iconTargetPoint.id}`] = filename;
+        loadIconImage(filename);
+        redraw();
+      }
+      closeIconModal();
+    });
+
+    grid.appendChild(cell);
+  });
+}
+
+document.getElementById("iconModalClose").addEventListener("click", closeIconModal);
+document.getElementById("iconModal").addEventListener("click", e => {
+  if (e.target === document.getElementById("iconModal")) closeIconModal();
+});
+document.getElementById("iconSearchInput").addEventListener("input", e => {
+  renderIconGrid(e.target.value);
+});
+
+/* --- 設定パネルのON/OFF連動 --- */
+document.querySelectorAll("input[name='iconMode']").forEach(r =>
+  r.addEventListener("change", e => {
+    isIconModeOn = (e.target.value === "on");
+    // ONになった時点でアイコン一覧を取得（まだなら）
+    if (isIconModeOn && allIconFiles.length === 0) {
+      fetchIconFileList().then(() => {
+        // モーダルが開いていれば再レンダリング
+        if (document.getElementById("iconModal").style.display === "flex") {
+          renderIconGrid(document.getElementById("iconSearchInput").value);
+        }
+      });
+    }
+    redraw();
+  })
+);
+
 function redraw() {
   clearCanvas();
   [...redPoints, ...bluePoints].forEach(drawPoint);
   applySubFunction();
+  drawIconArrows();
 }
 
 /* =========================
@@ -1930,6 +2365,15 @@ canvas.addEventListener("mousedown", e => {
   const cy = e.clientY - rect.top;
 
   const hit = findPointAtCanvasPos(cx, cy);
+
+  // Shift+クリックでアイコン割り当てモーダルを開く
+  if (e.button === 0 && e.shiftKey) {
+    if (isIconModeOn && hit) {
+      e.preventDefault();
+      openIconModal(hit);
+    }
+    return;
+  }
 
   if (e.button === 0) {
     if (hit) {
@@ -2121,6 +2565,7 @@ btnReset.addEventListener("click", () => {
   redPoints = [];
   bluePoints = [];
   basePoint = null;
+  iconAssignments = {};
   redraw();
   updateTablesFromPoints();
   updateCounts();
@@ -2145,7 +2590,7 @@ function getCurrentCoordinates() {
     return p ? { x: Math.round(p.x), y: Math.round(p.y) } : { x: 0, y: 0 };
   });
 
-  return { red: redArr, blue: blueArr };
+  return { red: redArr, blue: blueArr, icons: { ...iconAssignments } };
 }
 
 function applyPresetData(data) {
@@ -2163,6 +2608,11 @@ function applyPresetData(data) {
       bluePoints.push({ id: i + 1, color: "blue", x: p.x, y: p.y });
     }
   });
+
+  // アイコン割り当てを復元（保存データに含まれている場合）
+  iconAssignments = (data.icons && typeof data.icons === "object") ? { ...data.icons } : {};
+  // プリロード
+  Object.values(iconAssignments).forEach(f => f && loadIconImage(f));
 
   basePoint = null;
   updateTablesFromPoints();
@@ -2208,25 +2658,33 @@ function generateShareUrl() {
 
   const rPart = coords.red.map(p => `${p.x},${p.y}`).join(",");
   const bPart = coords.blue.map(p => `${p.x},${p.y}`).join(",");
-  const hash = `#v1,R,${rPart},B,${bPart}`;
 
+  // アイコン割り当てをコンパクトにシリアライズ
+  // 形式: I,red_1:tsubaki.png|blue_2:hibiki.png
+  const iconEntries = Object.entries(iconAssignments)
+    .filter(([, v]) => v)
+    .map(([k, v]) => `${k}:${v}`)
+    .join("|");
+  const iPart = iconEntries ? `,I,${iconEntries}` : "";
+
+  const hash = `#v2,R,${rPart},B,${bPart}${iPart}`;
   const url = location.href.split("#")[0] + hash;
   return url;
 }
 
-/**
- * URLハッシュから配置データをパースして適用する。
- * ハッシュが存在しない、またはフォーマットが不正な場合は何もしない。
- */
 function loadFromUrlHash() {
   const hash = location.hash;
-  if (!hash || !hash.startsWith("#v1,")) return;
+  if (!hash) return;
+
+  // v1互換（アイコンなし）
+  const isV1 = hash.startsWith("#v1,");
+  const isV2 = hash.startsWith("#v2,");
+  if (!isV1 && !isV2) return;
 
   try {
-    // "#v1,R,x1,y1,...,B,x1,y1,..." をパース
-    const inner = hash.slice(1); // "#" を除く
-    const rMatch = inner.match(/R,([-\d,]+),B/);
-    const bMatch = inner.match(/B,([-\d,]+)$/);
+    // 座標部分をパース
+    const rMatch = hash.match(/R,([-\d,]+),B/);
+    const bMatch = hash.match(/B,([-\d,]+?)(?:,I,|$)/);
 
     if (!rMatch || !bMatch) return;
 
@@ -2247,15 +2705,31 @@ function loadFromUrlHash() {
       return result;
     };
 
-    redPoints = toPoints(rNums, "red");
+    redPoints  = toPoints(rNums, "red");
     bluePoints = toPoints(bNums, "blue");
-    basePoint = null;
 
+    // アイコン割り当てをパース（v2のみ）
+    iconAssignments = {};
+    if (isV2) {
+      const iMatch = hash.match(/,I,(.+)$/);
+      if (iMatch) {
+        iMatch[1].split("|").forEach(entry => {
+          const colonIdx = entry.indexOf(":");
+          if (colonIdx > 0) {
+            const key = entry.slice(0, colonIdx);
+            const val = entry.slice(colonIdx + 1);
+            if (key && val) iconAssignments[key] = val;
+          }
+        });
+        Object.values(iconAssignments).forEach(f => f && loadIconImage(f));
+      }
+    }
+
+    basePoint = null;
     updateTablesFromPoints();
     updateCounts();
     redraw();
 
-    // ハッシュで読み込んだことをユーザーに通知
     setTimeout(() => {
       showUrlToast("📍 URLから配置を復元しました");
     }, 500);
