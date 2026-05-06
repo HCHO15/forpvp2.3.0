@@ -378,7 +378,7 @@ body.dark-mode #iconModalTitle {
 </head>
 
 <body>
-  <h1>ホル式戦術対抗戦マップ　-シッテムの箱- 1846</h1>
+  <h1>ホル式戦術対抗戦マップ　-シッテムの箱- 2054</h1>
   
   <div class="container">
     <div class="left-panel">
@@ -2282,25 +2282,75 @@ function drawIconArrows() {
       ctx.stroke();
       ctx.restore();
 
-      // 攻/防バッジ（_a → 攻、_d → 防）
-      const badgeLabel = filename.match(/_a\.[^.]+$/i) ? "攻"
-                       : filename.match(/_d\.[^.]+$/i) ? "防"
-                       : null;
-      if (badgeLabel) {
-        const bw = 18, bh = 16, br = 4;
-        const bx = ix + half - bw + 4;   // アイコン右端より少しはみ出す
-        const by = iy + half - bh + 4;   // アイコン下端より少しはみ出す
+      // 攻/防バッジ（_a → スコープ、_d → 盾）
+      const badgeType = filename.match(/_a\.[^.]+$/i) ? "scope"
+                      : filename.match(/_d\.[^.]+$/i) ? "shield"
+                      : null;
+      if (badgeType) {
+        const bw = 18, bh = 18, br = 4;
+        const bx = ix + half - bw + 4;
+        const by = iy + half - bh + 4;
+        const bcx = bx + bw / 2;
+        const bcy = by + bh / 2;
+
+        // バッジ背景
         ctx.save();
         ctx.fillStyle = "#DA9F01";
         ctx.beginPath();
         ctx.roundRect(bx, by, bw, bh, br);
         ctx.fill();
-        ctx.fillStyle = "#fff";
-        ctx.font = "bold 11px system-ui";
-        ctx.textAlign = "center";
-        ctx.textBaseline = "middle";
-        ctx.fillText(badgeLabel, bx + bw / 2, by + bh / 2);
         ctx.restore();
+
+        if (badgeType === "scope") {
+          // スコープ：円＋縦横の十字線
+          ctx.save();
+          ctx.strokeStyle = "#fff";
+          ctx.lineWidth = 1.5;
+          const r = 4.5;
+          const arm = 3.5; // 円の外に伸びる線の長さ
+          // 外円
+          ctx.beginPath();
+          ctx.arc(bcx, bcy, r, 0, Math.PI * 2);
+          ctx.stroke();
+          // 十字線（円の外側のみ）
+          ctx.beginPath();
+          ctx.moveTo(bcx, bcy - r - arm); ctx.lineTo(bcx, bcy - r); // 上
+          ctx.moveTo(bcx, bcy + r);       ctx.lineTo(bcx, bcy + r + arm); // 下
+          ctx.moveTo(bcx - r - arm, bcy); ctx.lineTo(bcx - r, bcy); // 左
+          ctx.moveTo(bcx + r, bcy);       ctx.lineTo(bcx + r + arm, bcy); // 右
+          ctx.stroke();
+          // 中心点
+          ctx.fillStyle = "#fff";
+          ctx.beginPath();
+          ctx.arc(bcx, bcy, 1.2, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.restore();
+
+        } else {
+          // 盾：丸みのある五角形（盾形）
+          ctx.save();
+          ctx.fillStyle = "#fff";
+          ctx.beginPath();
+          const sw = 6, sh = 11;
+          const sx = bcx, sy = bcy - sh / 2 + 0.5;
+          // 上辺左角→上辺右角→右下→底点←左下
+          ctx.moveTo(sx - sw, sy + 1.5);          // 左上（角丸の起点）
+          ctx.arcTo(sx - sw, sy, sx, sy, 2);      // 左上角丸
+          ctx.arcTo(sx + sw, sy, sx + sw, sy + 1.5, 2); // 右上角丸
+          ctx.lineTo(sx + sw, sy + sh * 0.55);    // 右辺
+          ctx.quadraticCurveTo(sx + sw, sy + sh, sx, sy + sh); // 右下カーブ→底点
+          ctx.quadraticCurveTo(sx - sw, sy + sh, sx - sw, sy + sh * 0.55); // 底点→左下カーブ
+          ctx.closePath();
+          ctx.fill();
+          // 盾の中央縦線
+          ctx.strokeStyle = "#DA9F01";
+          ctx.lineWidth = 1;
+          ctx.beginPath();
+          ctx.moveTo(sx, sy + 1);
+          ctx.lineTo(sx, sy + sh - 1.5);
+          ctx.stroke();
+          ctx.restore();
+        }
       }
     }
   });
