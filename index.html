@@ -378,7 +378,7 @@ body.dark-mode #iconModalTitle {
 </head>
 
 <body>
-  <h1>ホル式戦術対抗戦マップ　-シッテムの箱- 1335</h1>
+  <h1>ホル式戦術対抗戦マップ　-シッテムの箱- 1407</h1>
   
   <div class="container">
     <div class="left-panel">
@@ -1071,8 +1071,9 @@ function removePoint(p) {
     basePoint = null;
   }
 
-  // アイコン割り当ても解除
+  // アイコン割り当てとオフセットも解除
   delete iconAssignments[`${p.color}_${p.id}`];
+  delete iconOffsets[`${p.color}_${p.id}`];
 }
 
 function findPointAtCanvasPos(cx, cy) {
@@ -2097,6 +2098,10 @@ function updateCounts() {
 // 各点のアイコン割り当て: キー = "red_1" / "blue_3" など、値 = ファイル名("tsubaki.png")
 let iconAssignments = {};
 
+// 各点のアイコン手動オフセット: キー = "red_1" など、値 = {cx, cy}（Canvas座標の点からの相対値）
+// 値が存在しない場合は自動方向計算を使う
+let iconOffsets = {};
+
 // アイコン表示ON/OFFフラグ
 let isIconModeOn = false;
 
@@ -2168,7 +2173,7 @@ function getIconDirection(point, allPoints) {
 function drawIconArrows() {
   if (!isIconModeOn) return;
 
-  const ARROW_LEN   = 70;   // 点からアイコン中心までの距離
+  const ARROW_LEN   = 70;   // 点からアイコン中心までの距離（自動方向時）
   const ICON_SIZE   = 48;   // アイコン描画サイズ（40→48、約+20%）
   const ICON_RADIUS = 24;   // アイコン角丸クリップ用
 
@@ -2180,11 +2185,23 @@ function drawIconArrows() {
     if (!filename) return;
 
     const { cx: px, cy: py } = logicalToCanvas(p.x, p.y);
-    const { dx, dy } = getIconDirection(p, allPoints);
 
-    // 矢印の終点（アイコン中心）
-    const ix = px + dx * ARROW_LEN;
-    const iy = py + dy * ARROW_LEN;
+    // アイコン中心座標：手動オフセットがあればそれを使い、なければ自動計算
+    let ix, iy, dx, dy;
+    const offset = iconOffsets[key];
+    if (offset) {
+      ix = px + offset.cx;
+      iy = py + offset.cy;
+      const len = Math.sqrt(offset.cx * offset.cx + offset.cy * offset.cy) || 1;
+      dx = offset.cx / len;
+      dy = offset.cy / len;
+    } else {
+      const dir = getIconDirection(p, allPoints);
+      dx = dir.dx;
+      dy = dir.dy;
+      ix = px + dx * ARROW_LEN;
+      iy = py + dy * ARROW_LEN;
+    }
 
     // 矢印の色（点の色系統で薄め）
     const arrowColor = p.color === "red"
@@ -2249,6 +2266,47 @@ function drawIconArrows() {
 }
 
 /* --- アイコン選択モーダル制御 --- */
+
+// アイコンドラッグ用の状態
+const iconDragState = {
+  active: false,
+  key: null,       // "red_1" など
+  point: null,     // 紐付いている点オブジェクト
+  startCx: 0,      // ドラッグ開始時のCanvas X
+  startCy: 0,
+};
+
+const ICON_SIZE_HIT = 48; // ヒット判定に使うアイコンサイズ（drawIconArrowsと合わせる）
+
+/** Canvas座標(cx,cy)にアイコンがあれば {key, point} を返す */
+function findIconAtCanvasPos(cx, cy) {
+  if (!isIconModeOn) return null;
+  const allPoints = [...redPoints, ...bluePoints];
+  const ARROW_LEN = 70;
+  const half = ICON_SIZE_HIT / 2;
+
+  for (const p of allPoints) {
+    const key = `${p.color}_${p.id}`;
+    if (!iconAssignments[key]) continue;
+
+    const { cx: px, cy: py } = logicalToCanvas(p.x, p.y);
+    let ix, iy;
+    const offset = iconOffsets[key];
+    if (offset) {
+      ix = px + offset.cx;
+      iy = py + offset.cy;
+    } else {
+      const dir = getIconDirection(p, allPoints);
+      ix = px + dir.dx * ARROW_LEN;
+      iy = py + dir.dy * ARROW_LEN;
+    }
+
+    if (cx >= ix - half && cx <= ix + half && cy >= iy - half && cy <= iy + half) {
+      return { key, point: p };
+    }
+  }
+  return null;
+}
 
 let iconTargetPoint = null; // 選択中の点
 
@@ -2369,9 +2427,24 @@ canvas.addEventListener("mousedown", e => {
 
   const hit = findPointAtCanvasPos(cx, cy);
 
-  // Shift+クリックでアイコン割り当てモーダルを開く
+  // Shift+クリック / Shift+ドラッグ
   if (e.button === 0 && e.shiftKey) {
-    if (isIconModeOn && hit) {
+    if (!isIconModeOn) return;
+
+    // アイコン上をShift+ドラッグ → アイコン移動モード
+    const iconHit = findIconAtCanvasPos(cx, cy);
+    if (iconHit) {
+      e.preventDefault();
+      iconDragState.active = true;
+      iconDragState.key    = iconHit.key;
+      iconDragState.point  = iconHit.point;
+      iconDragState.startCx = cx;
+      iconDragState.startCy = cy;
+      return;
+    }
+
+    // 点上をShift+クリック → モーダルを開く
+    if (hit) {
       e.preventDefault();
       openIconModal(hit);
     }
@@ -2385,6 +2458,11 @@ canvas.addEventListener("mousedown", e => {
       dragState.point = hit;
       dragState.offsetX = hit.x - logical.x;
       dragState.offsetY = hit.y - logical.y;
+
+      // 点を動かしたらアイコンのオフセットをリセット→自動方向に戻す
+      const key = `${hit.color}_${hit.id}`;
+      delete iconOffsets[key];
+
       return;
     }
 
@@ -2404,11 +2482,20 @@ canvas.addEventListener("mousedown", e => {
 });
 
 canvas.addEventListener("mousemove", e => {
-  if (!dragState.active || !dragState.point) return;
-
   const rect = canvas.getBoundingClientRect();
   const cx = e.clientX - rect.left;
   const cy = e.clientY - rect.top;
+
+  // アイコンドラッグ中
+  if (iconDragState.active && iconDragState.key) {
+    const p = iconDragState.point;
+    const { cx: px, cy: py } = logicalToCanvas(p.x, p.y);
+    iconOffsets[iconDragState.key] = { cx: cx - px, cy: cy - py };
+    redraw();
+    return;
+  }
+
+  if (!dragState.active || !dragState.point) return;
 
   const logical = canvasToLogical(cx, cy);
   dragState.point.x = logical.x + dragState.offsetX;
@@ -2422,6 +2509,9 @@ canvas.addEventListener("mousemove", e => {
   canvas.addEventListener(ev, () => {
     dragState.active = false;
     dragState.point = null;
+    iconDragState.active = false;
+    iconDragState.key    = null;
+    iconDragState.point  = null;
   })
 );
 
@@ -2569,6 +2659,7 @@ btnReset.addEventListener("click", () => {
   bluePoints = [];
   basePoint = null;
   iconAssignments = {};
+  iconOffsets = {};
   redraw();
   updateTablesFromPoints();
   updateCounts();
