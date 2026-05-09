@@ -55,6 +55,32 @@
     .counts {
       font-size: 13px;
       margin-left: 4px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    #memoInput {
+      flex: 1;
+      font-size: 12px;
+      padding: 2px 6px;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      min-width: 0;
+      background: #fff;
+      color: #333;
+    }
+
+    body.dark-mode #memoInput {
+      background: #333;
+      color: #eee;
+      border-color: #555;
+    }
+
+    #memoCount {
+      font-size: 11px;
+      color: #999;
+      white-space: nowrap;
     }
 
     .right-panel {
@@ -309,6 +335,62 @@ body.dark-mode #iconModalTitle {
   color: #eee;
 }
 
+#iconTabs {
+  display: flex;
+  gap: 4px;
+}
+
+.icon-tab {
+  flex: 1;
+  padding: 5px 4px;
+  font-size: 12px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  background: #f5f5f5;
+  cursor: pointer;
+  color: #555;
+  transition: background 0.15s, color 0.15s;
+}
+
+.icon-tab.active {
+  background: #1e88e5;
+  color: #fff;
+  border-color: #1e88e5;
+}
+
+.icon-cell-wrap {
+  position: relative;
+}
+
+.icon-pin {
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 14px;
+  height: 14px;
+  background: #DA9F01;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 9px;
+  color: #fff;
+  line-height: 1;
+  pointer-events: none;
+  z-index: 1;
+}
+
+body.dark-mode .icon-tab {
+  background: #333;
+  color: #aaa;
+  border-color: #555;
+}
+
+body.dark-mode .icon-tab.active {
+  background: #1e88e5;
+  color: #fff;
+}
+
 @media (max-width: 600px) {
 
   body {
@@ -482,7 +564,9 @@ body.dark-mode #iconModalTitle {
 </div>
 
       <div class="counts" id="countsDisplay">
-        赤点：0/4　青点：0/4
+        <span id="countsText">赤点：0/4　青点：0/4</span>
+        <input type="text" id="memoInput" maxlength="50" placeholder="メモ（50字）">
+        <span id="memoCount">0/50</span>
       </div>
 
       <div id="canvasWrapper">
@@ -832,6 +916,11 @@ body.dark-mode #iconModalTitle {
     <div style="display:flex; align-items:center; gap:8px;">
       <span id="iconModalTitle">キャラを選択</span>
       <button id="iconModalClose">✕</button>
+    </div>
+    <div id="iconTabs">
+      <button class="icon-tab active" data-tab="default">デフォルト</button>
+      <button class="icon-tab" data-tab="recent">最近使った</button>
+      <button class="icon-tab" data-tab="favorite">お気に入り</button>
     </div>
     <input type="text" id="iconSearchInput" placeholder="ファイル名で絞り込み…">
     <div id="iconGrid">
@@ -2107,7 +2196,7 @@ function applySubFunction() {
 }
 
 function updateCounts() {
-  countsDisplay.textContent =
+  document.getElementById("countsText").textContent =
     `赤点：${redPoints.length}/${MAX_POINTS}　青点：${bluePoints.length}/${MAX_POINTS}`;
 }
   
@@ -2426,6 +2515,30 @@ function findIconAtCanvasPos(cx, cy) {
   return null;
 }
 
+// 現在のタブ
+let currentIconTab = "default";
+
+// 最近使ったアイコン（最大8件、filenameで管理）
+let recentIcons = JSON.parse(localStorage.getItem("recentIcons") || "[]");
+
+// お気に入りアイコン（filenameのSetで管理）
+let favoriteIcons = new Set(JSON.parse(localStorage.getItem("favoriteIcons") || "[]"));
+
+function saveRecentIcons() {
+  localStorage.setItem("recentIcons", JSON.stringify(recentIcons));
+}
+
+function saveFavoriteIcons() {
+  localStorage.setItem("favoriteIcons", JSON.stringify([...favoriteIcons]));
+}
+
+function addToRecent(filename) {
+  recentIcons = recentIcons.filter(f => f !== filename);
+  recentIcons.unshift(filename);
+  if (recentIcons.length > 8) recentIcons = recentIcons.slice(0, 8);
+  saveRecentIcons();
+}
+
 let iconTargetPoint = null; // 選択中の点
 
 function openIconModal(point) {
@@ -2435,6 +2548,12 @@ function openIconModal(point) {
     `キャラを選択（${label}${point.id}番）`;
 
   document.getElementById("iconSearchInput").value = "";
+
+  // タブの見た目を同期
+  document.querySelectorAll(".icon-tab").forEach(t => {
+    t.classList.toggle("active", t.dataset.tab === currentIconTab);
+  });
+
   renderIconGrid("");
   document.getElementById("iconModal").style.display = "flex";
 }
@@ -2448,32 +2567,54 @@ function renderIconGrid(filter) {
   const grid = document.getElementById("iconGrid");
   grid.innerHTML = "";
 
-  // 「割り当て解除」セル
-  const noneCell = document.createElement("div");
-  noneCell.className = "icon-cell icon-none";
-  noneCell.textContent = "なし";
-  noneCell.addEventListener("click", () => {
-    if (iconTargetPoint) {
-      delete iconAssignments[`${iconTargetPoint.color}_${iconTargetPoint.id}`];
-      redraw();
-    }
-    closeIconModal();
-  });
-  grid.appendChild(noneCell);
+  // 「割り当て解除」セル（デフォルトタブのみ表示）
+  if (currentIconTab === "default") {
+    const noneCell = document.createElement("div");
+    noneCell.className = "icon-cell icon-none";
+    noneCell.textContent = "なし";
+    noneCell.addEventListener("click", () => {
+      if (iconTargetPoint) {
+        delete iconAssignments[`${iconTargetPoint.color}_${iconTargetPoint.id}`];
+        redraw();
+      }
+      closeIconModal();
+    });
+    grid.appendChild(noneCell);
+  }
 
-  const filtered = filter
-    ? allIconFiles.filter(e => e.filename.toLowerCase().includes(filter.toLowerCase()))
-    : allIconFiles;
+  // タブに応じた表示対象を決定
+  let entries;
+  if (currentIconTab === "recent") {
+    entries = recentIcons
+      .map(f => allIconFiles.find(e => e.filename === f))
+      .filter(Boolean);
+  } else if (currentIconTab === "favorite") {
+    entries = allIconFiles.filter(e => favoriteIcons.has(e.filename));
+  } else {
+    entries = allIconFiles;
+  }
 
-  if (filtered.length === 0) {
+  // 検索フィルタ
+  if (filter) {
+    entries = entries.filter(e => e.filename.toLowerCase().includes(filter.toLowerCase()));
+  }
+
+  if (entries.length === 0) {
     const msg = document.createElement("div");
     msg.style.cssText = "color:#888; font-size:12px; padding:8px; grid-column:1/-1;";
-    msg.textContent = "該当なし";
+    msg.textContent = currentIconTab === "recent" ? "まだ使ったアイコンがありません"
+                    : currentIconTab === "favorite" ? "お気に入りが登録されていません"
+                    : "該当なし";
     grid.appendChild(msg);
     return;
   }
 
-  filtered.forEach(entry => {
+  entries.forEach(entry => {
+    // ラッパー（ピンバッジ用）
+    const wrap = document.createElement("div");
+    wrap.className = "icon-cell-wrap";
+    wrap.style.position = "relative";
+
     const cell = document.createElement("div");
     cell.className = "icon-cell";
 
@@ -2490,17 +2631,51 @@ function renderIconGrid(filter) {
     cell.appendChild(img);
     cell.appendChild(label);
 
+    // ピンバッジ（お気に入り登録済み）
+    if (favoriteIcons.has(entry.filename)) {
+      const pin = document.createElement("div");
+      pin.className = "icon-pin";
+      pin.textContent = "★";
+      pin.title = "お気に入り登録済み（クリックで解除）";
+      pin.style.pointerEvents = "auto";
+      pin.addEventListener("click", e => {
+        e.stopPropagation();
+        favoriteIcons.delete(entry.filename);
+        saveFavoriteIcons();
+        renderIconGrid(document.getElementById("iconSearchInput").value);
+      });
+      wrap.appendChild(pin);
+    } else {
+      // 未登録：ホバー時にピン追加ボタンを表示
+      const pinAdd = document.createElement("div");
+      pinAdd.className = "icon-pin";
+      pinAdd.textContent = "☆";
+      pinAdd.title = "お気に入りに追加";
+      pinAdd.style.cssText += "opacity:0; pointer-events:auto; transition:opacity 0.15s;";
+      cell.addEventListener("mouseenter", () => { pinAdd.style.opacity = "1"; });
+      cell.addEventListener("mouseleave", () => { pinAdd.style.opacity = "0"; });
+      pinAdd.addEventListener("click", e => {
+        e.stopPropagation();
+        favoriteIcons.add(entry.filename);
+        saveFavoriteIcons();
+        renderIconGrid(document.getElementById("iconSearchInput").value);
+      });
+      wrap.appendChild(pinAdd);
+    }
+
+    // アイコン選択
     cell.addEventListener("click", () => {
       if (iconTargetPoint) {
-        // フォルダ情報ごと保持する
         iconAssignments[`${iconTargetPoint.color}_${iconTargetPoint.id}`] = entry;
         loadIconImage(entry);
+        addToRecent(entry.filename);
         redraw();
       }
       closeIconModal();
     });
 
-    grid.appendChild(cell);
+    wrap.appendChild(cell);
+    grid.appendChild(wrap);
   });
 }
 
@@ -2510,6 +2685,17 @@ document.getElementById("iconModal").addEventListener("click", e => {
 });
 document.getElementById("iconSearchInput").addEventListener("input", e => {
   renderIconGrid(e.target.value);
+});
+
+// タブ切り替え
+document.querySelectorAll(".icon-tab").forEach(tab => {
+  tab.addEventListener("click", () => {
+    currentIconTab = tab.dataset.tab;
+    document.querySelectorAll(".icon-tab").forEach(t => t.classList.remove("active"));
+    tab.classList.add("active");
+    document.getElementById("iconSearchInput").value = "";
+    renderIconGrid("");
+  });
 });
 
 /* --- 設定パネルのON/OFF連動 --- */
@@ -2528,7 +2714,12 @@ document.querySelectorAll("input[name='iconMode']").forEach(r =>
   })
 );
 
-// ページ読み込み時にiconModeを復元
+// メモ欄の文字数カウント
+const memoInput = document.getElementById("memoInput");
+const memoCount = document.getElementById("memoCount");
+memoInput.addEventListener("input", () => {
+  memoCount.textContent = `${memoInput.value.length}/50`;
+});
 (function restoreIconMode() {
   const saved = localStorage.getItem("iconMode");
   if (saved === "on") {
@@ -2904,7 +3095,10 @@ function generateShareUrl() {
     .join("|");
   const iPart = iconEntries ? `,I,${iconEntries}` : "";
 
-  const hash = `#v3,R,${rPart},B,${bPart}${iPart}`;
+  const memo = memoInput.value.trim().slice(0, 50);
+  const mPart = memo ? `,M,${encodeURIComponent(memo)}` : "";
+
+  const hash = `#v3,R,${rPart},B,${bPart}${iPart}${mPart}`;
   const url = location.href.split("#")[0] + hash;
   return url;
 }
@@ -2975,6 +3169,17 @@ function loadFromUrlHash() {
           }
         });
       }
+    }
+
+    // メモを復元
+    const mMatch = hash.match(/,M,([^#]*)$/);
+    if (mMatch) {
+      const memo = decodeURIComponent(mMatch[1]).slice(0, 50);
+      memoInput.value = memo;
+      memoCount.textContent = `${memo.length}/50`;
+    } else {
+      memoInput.value = "";
+      memoCount.textContent = "0/50";
     }
 
     basePoint = null;
