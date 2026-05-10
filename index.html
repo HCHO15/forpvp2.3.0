@@ -139,6 +139,15 @@
       width: 44px;
       padding: 1px !important;
       white-space: nowrap;
+      cursor: pointer;
+    }
+
+    .icon-table-cell:hover {
+      background: #e3f2fd;
+    }
+
+    body.dark-mode .icon-table-cell:hover {
+      background: #1a3a5c;
     }
 
     .icon-table-cell img {
@@ -154,12 +163,19 @@
       width: 24px;
       height: 24px;
       border-radius: 3px;
-      background: #eee;
+      border: 1px dashed #bbb;
       margin: auto;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 14px;
+      color: #bbb;
+      line-height: 1;
     }
 
     body.dark-mode .icon-table-cell .icon-table-empty {
-      background: #444;
+      border-color: #555;
+      color: #555;
     }
 
     .right-panel {
@@ -1196,6 +1212,20 @@ function initTables() {
     r.addEventListener("change", onBaseSelect)
   );
 
+  // 生徒列セルのクリックでアイコン選択モーダルを開く
+  document.querySelectorAll(".icon-table-cell").forEach(cell => {
+    cell.addEventListener("click", () => {
+      if (!isIconModeOn) return;
+      const key = cell.id.replace("iconCell_", ""); // "red_1" など
+      const [color, idStr] = key.split("_");
+      const id = parseInt(idStr, 10);
+      const points = color === "red" ? redPoints : bluePoints;
+      const point = points.find(p => p.id === id);
+      if (!point) return;
+      openIconModal(point);
+    });
+  });
+
   // ▲▼ボタンのクリック
   document.querySelectorAll(".coord-btn").forEach(btn => {
     btn.addEventListener("click", () => {
@@ -1249,7 +1279,7 @@ function updateTablesFromPoints() {
   document.querySelectorAll(".coord-input").forEach(i => { i.value = ""; });
   document.querySelectorAll(".coord-btn").forEach(b => { b.disabled = true; });
   document.querySelectorAll(".icon-table-cell").forEach(cell => {
-    cell.innerHTML = '<div class="icon-table-empty"></div>';
+    cell.innerHTML = '<div class="icon-table-empty">+</div>';
   });
 
   const all = [...redPoints, ...bluePoints];
@@ -1283,7 +1313,7 @@ function updateTablesFromPoints() {
         cell.innerHTML = "";
         cell.appendChild(img);
       } else {
-        cell.innerHTML = '<div class="icon-table-empty"></div>';
+        cell.innerHTML = '<div class="icon-table-empty">+</div>';
       }
     }
   });
