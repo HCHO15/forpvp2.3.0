@@ -83,6 +83,56 @@
       white-space: nowrap;
     }
 
+    .coord-cell {
+      display: flex;
+      align-items: center;
+      gap: 1px;
+    }
+
+    .coord-cell .coord-input {
+      width: 36px;
+      text-align: center;
+      font-size: 11px;
+      padding: 1px 2px;
+      border: 1px solid #ccc;
+      border-radius: 3px;
+      -moz-appearance: textfield;
+    }
+
+    .coord-cell .coord-input::-webkit-inner-spin-button,
+    .coord-cell .coord-input::-webkit-outer-spin-button {
+      -webkit-appearance: none;
+    }
+
+    .coord-btn {
+      width: 14px;
+      height: 20px;
+      font-size: 9px;
+      line-height: 1;
+      padding: 0;
+      border: 1px solid #ccc;
+      border-radius: 2px;
+      background: #f0f0f0;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      user-select: none;
+      color: #444;
+      flex-shrink: 0;
+    }
+
+    .coord-btn:hover:not(:disabled) { background: #ddd; }
+    .coord-btn:disabled { opacity: 0.3; cursor: default; }
+
+    body.dark-mode .coord-btn {
+      background: #444;
+      border-color: #666;
+      color: #ccc;
+    }
+
+    body.dark-mode .coord-btn:hover:not(:disabled) { background: #555; }
+
     .right-panel {
       background: #fff;
       padding: 8px;
@@ -1069,13 +1119,23 @@ function canvasToLogical(cx, cy) {
   return { x: cx - originX, y: originY - cy };
 }
 
+function makeCoordCell(color, id, axis) {
+  return `<td>
+    <div class="coord-cell">
+      <button class="coord-btn" data-color="${color}" data-id="${id}" data-axis="${axis}" data-dir="-1" disabled>▼</button>
+      <input class="coord-input" data-color="${color}" data-id="${id}" data-axis="${axis}" type="number">
+      <button class="coord-btn" data-color="${color}" data-id="${id}" data-axis="${axis}" data-dir="1" disabled>▲</button>
+    </div>
+  </td>`;
+}
+
 function initTables() {
   for (let i = 1; i <= MAX_POINTS; i++) {
     const redRow = document.createElement("tr");
     redRow.innerHTML = `
       <td>${i}</td>
-      <td><input class="coord-input" data-color="red" data-id="${i}" data-axis="x"></td>
-      <td><input class="coord-input" data-color="red" data-id="${i}" data-axis="y"></td>
+      ${makeCoordCell("red", i, "x")}
+      ${makeCoordCell("red", i, "y")}
       <td><input type="radio" name="redBase" data-color="red" data-id="${i}"></td>
     `;
     redTableBody.appendChild(redRow);
@@ -1083,8 +1143,8 @@ function initTables() {
     const blueRow = document.createElement("tr");
     blueRow.innerHTML = `
       <td>${i}</td>
-      <td><input class="coord-input" data-color="blue" data-id="${i}" data-axis="x"></td>
-      <td><input class="coord-input" data-color="blue" data-id="${i}" data-axis="y"></td>
+      ${makeCoordCell("blue", i, "x")}
+      ${makeCoordCell("blue", i, "y")}
       <td><input type="radio" name="blueBase" data-color="blue" data-id="${i}"></td>
     `;
     blueTableBody.appendChild(blueRow);
@@ -1097,6 +1157,20 @@ function initTables() {
   document.querySelectorAll("input[type=radio]").forEach(r =>
     r.addEventListener("change", onBaseSelect)
   );
+
+  // ▲▼ボタンのクリック
+  document.querySelectorAll(".coord-btn").forEach(btn => {
+    btn.addEventListener("click", () => {
+      const { color, id, axis, dir } = btn.dataset;
+      const point = (color === "red" ? redPoints : bluePoints)
+        .find(p => p.id === parseInt(id, 10));
+      if (!point) return;
+      if (axis === "x") point.x += parseInt(dir, 10);
+      else              point.y += parseInt(dir, 10);
+      updateTablesFromPoints();
+      redraw();
+    });
+  });
 }
 
 function onBaseSelect(e) {
@@ -1133,9 +1207,10 @@ function onCoordInputChange(e) {
 }
 
 function updateTablesFromPoints() {
-  document.querySelectorAll(".coord-input").forEach(i => {
-    i.value = "";
-  });
+  // 全inputをクリア、全ボタンをdisabledに
+  document.querySelectorAll(".coord-input").forEach(i => { i.value = ""; });
+  document.querySelectorAll(".coord-btn").forEach(b => { b.disabled = true; });
+
   const all = [...redPoints, ...bluePoints];
 
   all.forEach(p => {
@@ -1148,6 +1223,11 @@ function updateTablesFromPoints() {
 
     if (xInput) xInput.value = Math.round(p.x);
     if (yInput) yInput.value = Math.round(p.y);
+
+    // その点の▲▼ボタンを有効化
+    document.querySelectorAll(
+      `.coord-btn[data-color="${p.color}"][data-id="${p.id}"]`
+    ).forEach(b => { b.disabled = false; });
   });
 }
 
@@ -3371,6 +3451,9 @@ btnSettings.addEventListener("click", () => {
 
 btnSettingsClose.addEventListener("click", () => {
   settingsModal.style.display = "none";
+});
+settingsModal.addEventListener("click", e => {
+  if (e.target === settingsModal) settingsModal.style.display = "none";
 });
 
 document.querySelectorAll("input[name='darkMode']").forEach(r =>
