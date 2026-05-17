@@ -4046,9 +4046,10 @@ Array.from(shortcutSelect.options).forEach(opt => {
   label.style.display = "block";
   label.style.marginBottom = "4px";
 
+  const i18nKey = opt.dataset.i18n || "";
   label.innerHTML = `
     <input type="checkbox" class="preset-filter" data-value="${key}" ${enabled ? "checked" : ""}>
-    ${opt.textContent}
+    <span ${i18nKey ? `data-i18n="${i18nKey}"` : ""}>${opt.textContent}</span>
   `;
 
   presetFilterList.appendChild(label);
