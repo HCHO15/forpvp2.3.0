@@ -3824,12 +3824,6 @@ function applyLang(lang) {
     if (typeof t[key] === "string") opt.textContent = t[key];
   });
 
-  // shortcutSelect options
-  document.querySelectorAll("#shortcutSelect option[data-i18n]").forEach(opt => {
-    const key = opt.dataset.i18n;
-    if (typeof t[key] === "string") opt.textContent = t[key];
-  });
-
   // 使い方ガイド
   const guideEl = document.getElementById("usageGuideContent");
   if (guideEl && t.usageHTML) guideEl.innerHTML = t.usageHTML;
@@ -3841,8 +3835,8 @@ function applyLang(lang) {
   // カウント表示を更新
   updateCounts();
 
-  // shortcutSelectの文言更新後にpresetFilterListを再生成（初回以外）
-  if (typeof buildPresetFilterList === "function" && document.readyState === "complete") {
+  // shortcutSelectの文言更新後にpresetFilterListを再生成
+  if (typeof buildPresetFilterList === "function") {
     buildPresetFilterList();
   }
 }
@@ -3852,8 +3846,8 @@ document.querySelectorAll("input[name='lang']").forEach(r =>
   r.addEventListener("change", e => applyLang(e.target.value))
 );
 
-// 初期化
-applyLang(currentLang);
+// 初期化（buildPresetFilterList定義後に実行するためここでは呼ばない）
+// → ファイル末尾でapplyLang(currentLang)を呼ぶ
 
 window.addEventListener("load", loadFromUrlHash);
 
@@ -4022,7 +4016,14 @@ showPresetTab(savedTab);
 const presetFilterList = document.getElementById("presetFilterList");
 const savedPresetEnabled = JSON.parse(localStorage.getItem("presetEnabled") || "{}");
 
+// shortcutSelectの全optionを初期状態で保存（data-i18nキーとvalueを保持）
+const allShortcutOptions = Array.from(shortcutSelect.options)
+  .filter(opt => opt.value !== "manual")
+  .map(opt => ({ value: opt.value, i18nKey: opt.dataset.i18n || "" }));
+
 function buildPresetFilterList() {
+  const t = LANGS[currentLang] || LANGS.ja;
+
   // 現在のチェック状態を保存
   const currentState = {};
   document.querySelectorAll(".preset-filter").forEach(f => {
@@ -4031,28 +4032,22 @@ function buildPresetFilterList() {
 
   presetFilterList.innerHTML = "";
 
-  Array.from(shortcutSelect.options).forEach(opt => {
-    if (opt.value === "manual") return;
-
-    const key = opt.value;
-
-    // チェック状態：現在の状態 → savedPresetEnabled → presetDefaultEnabled の順で参照
+  allShortcutOptions.forEach(({ value: key, i18nKey }) => {
     const enabled = (key in currentState)
       ? currentState[key]
       : (key in savedPresetEnabled)
         ? savedPresetEnabled[key]
         : presetDefaultEnabled[key];
 
+    const text = (i18nKey && t[i18nKey]) ? t[i18nKey] : key;
+
     const label = document.createElement("label");
     label.style.display = "block";
     label.style.marginBottom = "4px";
-
-    const i18nKey = opt.dataset.i18n || "";
     label.innerHTML = `
       <input type="checkbox" class="preset-filter" data-value="${key}" ${enabled ? "checked" : ""}>
-      <span ${i18nKey ? `data-i18n="${i18nKey}"` : ""}>${opt.textContent}</span>
+      <span ${i18nKey ? `data-i18n="${i18nKey}"` : ""}>${text}</span>
     `;
-
     presetFilterList.appendChild(label);
   });
 
@@ -4060,10 +4055,14 @@ function buildPresetFilterList() {
 }
 
 buildPresetFilterList();
+
+// 初期言語適用（buildPresetFilterList定義後なので全て正しく翻訳される）
+applyLang(currentLang);
   
 function updateShortcutSelect() {
   const filters = document.querySelectorAll(".preset-filter");
   const allowed = ["manual"];
+  const t = LANGS[currentLang] || LANGS.ja;
 
   filters.forEach(f => {
     if (f.checked) allowed.push(f.dataset.value);
@@ -4075,18 +4074,22 @@ function updateShortcutSelect() {
   // manual
   const optManual = document.createElement("option");
   optManual.value = "manual";
-  optManual.textContent = (LANGS[currentLang] || LANGS.ja).scManual;
+  optManual.textContent = t.scManual;
   shortcutSelect.appendChild(optManual);
 
-  // 元の順番で追加
+  // 元の順番で追加（data-i18nキーから直接翻訳テキストを取得）
   Array.from(presetFilterList.querySelectorAll("label")).forEach(label => {
-    const value = label.querySelector("input").dataset.value;
+    const input = label.querySelector("input");
     const span  = label.querySelector("span");
-    const text  = span ? span.textContent.trim() : label.textContent.trim();
+    if (!input) return;
+    const value   = input.dataset.value;
+    const i18nKey = span ? span.dataset.i18n : "";
+    const text    = (i18nKey && t[i18nKey]) ? t[i18nKey] : (span ? span.textContent.trim() : "");
 
     if (allowed.includes(value)) {
       const opt = document.createElement("option");
       opt.value = value;
+      opt.setAttribute("data-i18n", i18nKey || "");
       opt.textContent = text;
       shortcutSelect.appendChild(opt);
     }
