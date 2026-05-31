@@ -1029,6 +1029,12 @@ body.dark-mode .icon-tab.active {
     </div>
 
     <div style="margin-bottom:8px;">
+      <div><strong data-i18n="mapLabel">マップ</strong></div>
+      <label><input type="radio" name="mapSelect" value="s10" checked> S10</label><br>
+      <label><input type="radio" name="mapSelect" value="s11"> S11</label>
+    </div>
+
+    <div style="margin-bottom:8px;" id="obstacleSection">
       <div><strong data-i18n="obstacleLabel">遮蔽物表示</strong></div>
       <label><input type="radio" name="obstacle" value="on" checked> <span data-i18n="show">表示</span></label><br>
       <label><input type="radio" name="obstacle" value="off"> <span data-i18n="hide">非表示</span></label>
@@ -1211,15 +1217,40 @@ function getLightColorByColor(color) {
   return color === "red" ? COLOR_RED_LIGHT : COLOR_BLUE_LIGHT;
 }
 
-const bgImage = new Image();
-bgImage.src = "S10 map.png";
+const bgImages = {
+  s10: new Image(),
+  s11: new Image(),
+};
+bgImages.s10.src = "S10 map.png";
+bgImages.s11.src = "S11 map.png";
+
+let currentMap = localStorage.getItem("mapSelect") || "s10";
 let bgLoaded = false;
-bgImage.onload = () => { bgLoaded = true; redraw(); };
+bgImages.s10.onload = () => { bgLoaded = true; redraw(); };
+bgImages.s11.onload = () => { if (currentMap === "s11") redraw(); };
 
 const bgImage2 = new Image();
 bgImage2.src = "S10 map 遮蔽.png";
 let bg2Loaded = false;
 bgImage2.onload = () => { bg2Loaded = true; redraw(); };
+
+function applyMapSelect(map) {
+  currentMap = map;
+  localStorage.setItem("mapSelect", map);
+
+  // S11のときは遮蔽セクションをグレーアウト
+  const obstacleSection = document.getElementById("obstacleSection");
+  if (obstacleSection) {
+    obstacleSection.style.opacity = map === "s11" ? "0.4" : "1";
+    obstacleSection.style.pointerEvents = map === "s11" ? "none" : "";
+  }
+
+  // ラジオボタン反映
+  const r = document.querySelector(`input[name='mapSelect'][value='${map}']`);
+  if (r) r.checked = true;
+
+  redraw();
+}
 
 function logicalToCanvas(x, y) {
   return { cx: originX + x, cy: originY - y };
@@ -1477,12 +1508,13 @@ function clearCanvas() {
   ctx.fillRect(0, 0, width, height);
 
   // 通常マップ
-  if (bgLoaded) {
-    drawBackgroundImage(bgImage, 1.0);
+  const activeBg = bgImages[currentMap];
+  if (activeBg && activeBg.complete && activeBg.naturalWidth > 0) {
+    drawBackgroundImage(activeBg, 1.0);
   }
 
-  // 遮蔽物
-  if (isObstacleVisible && bg2Loaded) {
+  // 遮蔽物（S10のみ）
+  if (currentMap === "s10" && isObstacleVisible && bg2Loaded) {
     drawBackgroundImage(bgImage2, 0.9);
   }
 }
@@ -3542,6 +3574,7 @@ const LANGS = {
     modeLight:        "ライト",
     modeDark:         "ダーク",
     modeAlona:        "アロナ",
+    mapLabel:         "マップ",
     obstacleLabel:    "遮蔽物表示",
     show:             "表示",
     hide:             "非表示",
@@ -3666,6 +3699,7 @@ const LANGS = {
     modeLight:        "Light",
     modeDark:         "Dark",
     modeAlona:        "Arona",
+    mapLabel:         "Map",
     obstacleLabel:    "Show Obstacles",
     show:             "Show",
     hide:             "Hide",
@@ -3789,6 +3823,7 @@ const LANGS = {
     modeLight:        "라이트",
     modeDark:         "다크",
     modeAlona:        "아로나",
+    mapLabel:         "맵",
     obstacleLabel:    "차폐물 표시",
     show:             "표시",
     hide:             "숨기기",
@@ -4064,6 +4099,13 @@ document.querySelectorAll("input[name='obstacle']").forEach(r => {
     redraw();
   });
 });
+
+document.querySelectorAll("input[name='mapSelect']").forEach(r => {
+  r.addEventListener("change", e => applyMapSelect(e.target.value));
+});
+
+// マップ選択の初期化
+applyMapSelect(currentMap);
 
 initTables();
 
