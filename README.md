@@ -87,7 +87,7 @@ https://docs.google.com/forms/d/e/1FAIpQLSfYnSxyBftTE8hRrijhFfLnJLUf-vUuWeSvyoZk
 
 ## 情報発信
 
-**ホルマリン（FOR）　X：@oe3x9**
+**ホルマリン漬け（FOR）　X：@oe3x9**
 
 ---
 
