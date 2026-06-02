@@ -93,3 +93,4 @@ https://docs.google.com/forms/d/e/1FAIpQLSfYnSxyBftTE8hRrijhFfLnJLUf-vUuWeSvyoZk
 
 ## 更新履歴
 2026/06/01 公開
+2026/06/02 初期設定を修正
